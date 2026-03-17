@@ -622,6 +622,304 @@ object AchievementQuestDatabase {
             requirement = AchievementRequirement(RequirementType.COLLECT, "achievements", 499),
             reward = AchievementReward(legacyPoints = 1000, title = "God Mode", bonus = "unlock_everything"),
             hidden = true
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 1: Core Gameplay
+        // ============================================
+        Achievement(
+            id = "ach_feat_001",
+            name = "Legacy Builder",
+            description = "Complete a playthrough and carry over bonuses to a new game.",
+            category = AchievementCategory.POLITICAL,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.WIN_WAR, "legacy_game", 1),
+            reward = AchievementReward(legacyPoints = 50, bonus = "legacy_unlocked")
+        ),
+        Achievement(
+            id = "ach_feat_002",
+            name = "Time Traveler",
+            description = "Start a game in a historical year and experience era-specific events.",
+            category = AchievementCategory.SECRET,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.EVENT, "historical_start", 1),
+            reward = AchievementReward(legacyPoints = 75)
+        ),
+        Achievement(
+            id = "ach_feat_003",
+            name = "World Leader",
+            description = "Win through economic dominance.",
+            category = AchievementCategory.ECONOMIC,
+            tier = AchievementTier.DIAMOND,
+            requirement = AchievementRequirement(RequirementType.REACH_STAT, "economy", 100),
+            reward = AchievementReward(legacyPoints = 200, title = " tycoon")
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 2: Government
+        // ============================================
+        Achievement(
+            id = "ach_feat_021",
+            name = "Minister of Everything",
+            description = "Hire and manage ministers with different skill levels.",
+            category = AchievementCategory.POLITICAL,
+            tier = AchievementTier.BRONZE,
+            requirement = AchievementRequirement(RequirementType.BUILD, "ministers", 5),
+            reward = AchievementReward(legacyPoints = 20)
+        ),
+        Achievement(
+            id = "ach_feat_022",
+            name = "Election Winner",
+            description = "Win 10 elections as a democratic nation.",
+            category = AchievementCategory.POLITICAL,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.MAINTAIN_CONDITION, "elections_won", 10),
+            reward = AchievementReward(legacyPoints = 50, title = "Politician")
+        ),
+        Achievement(
+            id = "ach_feat_023",
+            name = "Lawmaker",
+            description = "Pass 20 different laws with various trade-offs.",
+            category = AchievementCategory.POLITICAL,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "laws_passed", 20),
+            reward = AchievementReward(legacyPoints = 75)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 3: Economy
+        // ============================================
+        Achievement(
+            id = "ach_feat_046",
+            name = "Stock Market Mogul",
+            description = "Successfully navigate stock market fluctuations.",
+            category = AchievementCategory.ECONOMIC,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.REACH_STAT, "stock_profit", 10000),
+            reward = AchievementReward(legacyPoints = 50, bonus = "market_bonus")
+        ),
+        Achievement(
+            id = "ach_feat_047",
+            name = "Trade Empire",
+            description = "Establish trade routes with 10 different nations.",
+            category = AchievementCategory.DIPLOMATIC,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "trade_routes", 10),
+            reward = AchievementReward(legacyPoints = 80)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 4: Military
+        // ============================================
+        Achievement(
+            id = "ach_feat_071",
+            name = "Joint Commander",
+            description = "Coordinate successful operations across all military branches.",
+            category = AchievementCategory.MILITARY,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "joint_ops", 1),
+            reward = AchievementReward(legacyPoints = 75, title = "General")
+        ),
+        Achievement(
+            id = "ach_feat_072",
+            name = "Nuclear Power",
+            description = "Develop nuclear weapons and maintain them.",
+            category = AchievementCategory.MILITARY,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "nuclear_weapons", 10),
+            reward = AchievementReward(legacyPoints = 150)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 5: Diplomacy
+        // ============================================
+        Achievement(
+            id = "ach_feat_096",
+            name = "Ambassador",
+            description = "Establish diplomatic missions in 15 different nations.",
+            category = AchievementCategory.DIPLOMATIC,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "embassies", 15),
+            reward = AchievementReward(legacyPoints = 80, title = "Diplomat")
+        ),
+        Achievement(
+            id = "ach_feat_097",
+            name = "UN Champion",
+            description = "Win 50 UN voting sessions.",
+            category = AchievementCategory.DIPLOMATIC,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "un_votes_won", 50),
+            reward = AchievementReward(legacyPoints = 150)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 6: Resources
+        // ============================================
+        Achievement(
+            id = "ach_feat_121",
+            name = "Resource Master",
+            description = "Manage food, energy, and materials effectively for 100 turns.",
+            category = AchievementCategory.ECONOMIC,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.MAINTAIN_CONDITION, "resources_stable", 100),
+            reward = AchievementReward(legacyPoints = 50)
+        ),
+        Achievement(
+            id = "ach_feat_122",
+            name = "Oil Baron",
+            description = "Become a major oil exporter.",
+            category = AchievementCategory.ECONOMIC,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.REACH_STAT, "oil_exports", 1000),
+            reward = AchievementReward(legacyPoints = 75)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 7: Technology
+        // ============================================
+        Achievement(
+            id = "ach_feat_146",
+            name = "Tech Visionary",
+            description = "Complete a full technology tree.",
+            category = AchievementCategory.SCIENTIFIC,
+            tier = AchievementTier.DIAMOND,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "techs_unlocked", 100),
+            reward = AchievementReward(legacyPoints = 200, title = "Innovator")
+        ),
+        Achievement(
+            id = "ach_feat_147",
+            name = "Space Explorer",
+            description = "Build a complete space program and reach other planets.",
+            category = AchievementCategory.SCIENTIFIC,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "space_colony", 1),
+            reward = AchievementReward(legacyPoints = 150)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 8: Social
+        // ============================================
+        Achievement(
+            id = "ach_feat_166",
+            name = "Education Minister",
+            description = "Build schools and universities in every region.",
+            category = AchievementCategory.SOCIAL,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.BUILD, "universities", 20),
+            reward = AchievementReward(legacyPoints = 75)
+        ),
+        Achievement(
+            id = "ach_feat_167",
+            name = "Healthcare Hero",
+            description = "Achieve maximum healthcare coverage.",
+            category = AchievementCategory.SOCIAL,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.REACH_STAT, "healthcare", 100),
+            reward = AchievementReward(legacyPoints = 50)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 9: Events
+        // ============================================
+        Achievement(
+            id = "ach_feat_191",
+            name = "Disaster Survivor",
+            description = "Survive 10 different natural disasters.",
+            category = AchievementCategory.DISASTER,
+            tier = AchievementTier.SILVER,
+            requirement = AchievementRequirement(RequirementType.SURVIVE_DISASTER, "natural", 10),
+            reward = AchievementReward(legacyPoints = 50, title = "Survivor")
+        ),
+        Achievement(
+            id = "ach_feat_192",
+            name = "Pandemic Expert",
+            description = "Successfully manage a pandemic outbreak.",
+            category = AchievementCategory.DISASTER,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.SURVIVE_DISASTER, "pandemic", 1),
+            reward = AchievementReward(legacyPoints = 75)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 10: Achievements
+        // ============================================
+        Achievement(
+            id = "ach_feat_211",
+            name = "Achievement Hunter",
+            description = "Unlock 100 different achievements.",
+            category = AchievementCategory.SECRET,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "achievements", 100),
+            reward = AchievementReward(legacyPoints = 200)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 11: Endgame
+        // ============================================
+        Achievement(
+            id = "ach_feat_226",
+            name = "Apocalypse Now",
+            description = "Survive an apocalypse scenario.",
+            category = AchievementCategory.IMPOSSIBLE,
+            tier = AchievementTier.DIAMOND,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "apocalypse_survived", 1),
+            reward = AchievementReward(legacyPoints = 500, title = "Post-Apocalyptic Survivor"),
+            impossible = true
+        ),
+        Achievement(
+            id = "ach_feat_227",
+            name = "Alien Defender",
+            description = "Successfully defend against an alien invasion.",
+            category = AchievementCategory.IMPOSSIBLE,
+            tier = AchievementTier.DIAMOND,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "alien_invasion", 1),
+            reward = AchievementReward(legacyPoints = 500, title = "Earth Protector"),
+            impossible = true
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 12: UI/UX
+        // ============================================
+        Achievement(
+            id = "ach_feat_241",
+            name = "Map Master",
+            description = "Use all available map views and customization options.",
+            category = AchievementCategory.SECRET,
+            tier = AchievementTier.BRONZE,
+            requirement = AchievementRequirement(RequirementType.COLLECT, "map_views", 10),
+            reward = AchievementReward(legacyPoints = 10)
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 13: Extraordinary
+        // ============================================
+        Achievement(
+            id = "ach_feat_261",
+            name = "Time Paradox",
+            description = "Experience a time paradox event.",
+            category = AchievementCategory.SECRET,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.EVENT, "time_paradox", 1),
+            reward = AchievementReward(legacyPoints = 150),
+            hidden = true
+        ),
+        Achievement(
+            id = "ach_feat_262",
+            name = "Simulation Glitch",
+            description = "Encounter an in-universe game glitch.",
+            category = AchievementCategory.SECRET,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.EVENT, "glitch", 1),
+            reward = AchievementReward(legacyPoints = 150),
+            hidden = true
+        ),
+        // ============================================
+        // FEATURE 300 ACHIEVEMENTS - Category 14: Multiplayer
+        // ============================================
+        Achievement(
+            id = "ach_feat_286",
+            name = "Online Champion",
+            description = "Win an online multiplayer game.",
+            category = AchievementCategory.DIPLOMATIC,
+            tier = AchievementTier.PLATINUM,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "multiplayer_win", 1),
+            reward = AchievementReward(legacyPoints = 150)
+        ),
+        Achievement(
+            id = "ach_feat_287",
+            name = "Alliance Founder",
+            description = "Create a successful player alliance.",
+            category = AchievementCategory.DIPLOMATIC,
+            tier = AchievementTier.GOLD,
+            requirement = AchievementRequirement(RequirementType.CHALLENGE, "alliance_created", 1),
+            reward = AchievementReward(legacyPoints = 75)
         )
     )
 
