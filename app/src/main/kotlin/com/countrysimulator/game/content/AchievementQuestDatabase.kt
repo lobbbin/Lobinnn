@@ -109,8 +109,7 @@ data class QuestObjective(
 data class QuestReward(
     val type: RewardType,
     val stat: String,
-    @Contextual
-    val value: Any
+    val value: Int
 )
 
 @Serializable
@@ -685,7 +684,7 @@ object AchievementQuestDatabase {
             ),
             rewards = listOf(
                 QuestReward(RewardType.LEGACY_POINTS, "legacy", 50),
-                QuestReward(RewardType.TITLE, "title", "Regional Power")
+                QuestReward(RewardType.TITLE, "title", 1)
             ),
             timeLimit = 50
         ),
@@ -720,8 +719,8 @@ object AchievementQuestDatabase {
             ),
             rewards = listOf(
                 QuestReward(RewardType.LEGACY_POINTS, "legacy", 500),
-                QuestReward(RewardType.TITLE, "title", "Superpower"),
-                QuestReward(RewardType.SPECIAL, "unlock", "world_leader_events")
+                QuestReward(RewardType.TITLE, "title", 2),
+                QuestReward(RewardType.SPECIAL, "unlock", 1)
             ),
             prerequisites = listOf("quest_story_2"),
             timeLimit = 200
@@ -739,8 +738,8 @@ object AchievementQuestDatabase {
             ),
             rewards = listOf(
                 QuestReward(RewardType.LEGACY_POINTS, "legacy", 2000),
-                QuestReward(RewardType.TITLE, "title", "Emperor of Earth"),
-                QuestReward(RewardType.SPECIAL, "unlock", "galactic_expansion")
+                QuestReward(RewardType.TITLE, "title", 3),
+                QuestReward(RewardType.SPECIAL, "unlock", 2)
             ),
             prerequisites = listOf("quest_story_3"),
             timeLimit = 500,
@@ -790,8 +789,8 @@ object AchievementQuestDatabase {
             ),
             rewards = listOf(
                 QuestReward(RewardType.STAT_BOOST, "military", 50),
-                QuestReward(RewardType.TITLE, "title", "Nuclear Power"),
-                QuestReward(RewardType.SPECIAL, "unlock", "nuclear_doctrine")
+                QuestReward(RewardType.TITLE, "title", 4),
+                QuestReward(RewardType.SPECIAL, "unlock", 3)
             ),
             failureConsequences = listOf("international_sanctions", "prestige_loss")
         ),
