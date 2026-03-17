@@ -116,7 +116,7 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                                 onClick = { currentScreen = Screen.ACTIONS }
                             )
                             NavigationBarItem(
-                                icon = { Icon(Icons.Default.Language, "Affairs") },
+                                icon = { Text("🌐", fontSize = 20.sp) },
                                 label = { Text("Affairs") },
                                 selected = currentScreen == Screen.AFFAIRS,
                                 onClick = { currentScreen = Screen.AFFAIRS }
