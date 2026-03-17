@@ -1,5 +1,7 @@
 package com.countrysimulator.game.domain
 
+import com.countrysimulator.game.content.EffectType
+import com.countrysimulator.game.content.LawEffect
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,14 +24,14 @@ object GovernmentReformDatabase {
             "Establish a written constitution", 1,
             listOf(GovernmentType.DICTATORSHIP, GovernmentType.MONARCHY),
             1800, 5000,
-            listOf(LawEffect("stability", 5, EffectType.BONUS))
+            listOf(LawEffect("stability", 5, EffectType.ADDITIVE))
         ),
         GovernmentReform(
             "reform_2", "Bill of Rights",
             "Guarantee basic civil liberties", 1,
             listOf(GovernmentType.DEMOCRACY, GovernmentType.REPUBLIC),
             1790, 3000,
-            listOf(LawEffect("happiness", 10, EffectType.BONUS))
+            listOf(LawEffect("happiness", 10, EffectType.ADDITIVE))
         ),
         // Tier 2: Political Reform
         GovernmentReform(
@@ -37,14 +39,14 @@ object GovernmentReformDatabase {
             "Implement fair elections", 2,
             listOf(GovernmentType.DICTATORSHIP, GovernmentType.MONARCHY),
             1850, 8000,
-            listOf(LawEffect("stability", 10, EffectType.BONUS), LawEffect("happiness", 5, EffectType.BONUS))
+            listOf(LawEffect("stability", 10, EffectType.ADDITIVE), LawEffect("happiness", 5, EffectType.ADDITIVE))
         ),
         GovernmentReform(
             "reform_4", "Federalism",
             "Divide power between central and regional governments", 2,
             listOf(GovernmentType.DEMOCRACY, GovernmentType.REPUBLIC),
             1820, 6000,
-            listOf(LawEffect("economy", 10, EffectType.BONUS), LawEffect("stability", 5, EffectType.BONUS))
+            listOf(LawEffect("economy", 10, EffectType.ADDITIVE), LawEffect("stability", 5, EffectType.ADDITIVE))
         ),
         // Tier 3: Social Reform
         GovernmentReform(
@@ -52,14 +54,14 @@ object GovernmentReformDatabase {
             "Grant voting rights to all citizens", 3,
             listOf(GovernmentType.DEMOCRACY),
             1900, 10000,
-            listOf(LawEffect("happiness", 15, EffectType.BONUS), LawEffect("stability", -5, EffectType.PENALTY))
+            listOf(LawEffect("happiness", 15, EffectType.ADDITIVE), LawEffect("stability", -5, EffectType.ADDITIVE))
         ),
         GovernmentReform(
             "reform_6", "Social Safety Net",
             "Establish welfare programs", 3,
             listOf(GovernmentType.DEMOCRACY, GovernmentType.SOCIALISM, GovernmentType.COMMUNISM),
             1930, 12000,
-            listOf(LawEffect("happiness", 20, EffectType.BONUS), LawEffect("economy", -10, EffectType.PENALTY))
+            listOf(LawEffect("happiness", 20, EffectType.ADDITIVE), LawEffect("economy", -10, EffectType.ADDITIVE))
         ),
         // Tier 4: Modernization
         GovernmentReform(
@@ -67,14 +69,14 @@ object GovernmentReformDatabase {
             "Implement e-government services", 4,
             listOf(GovernmentType.DEMOCRACY, GovernmentType.REPUBLIC, GovernmentType.TECHNOCRACY),
             1990, 20000,
-            listOf(LawEffect("technology", 15, EffectType.BONUS), LawEffect("corruption", -10, EffectType.PENALTY))
+            listOf(LawEffect("technology", 15, EffectType.ADDITIVE), LawEffect("corruption", -10, EffectType.ADDITIVE))
         ),
         GovernmentReform(
             "reform_8", "Green Government",
             "Environmental protection as constitutional principle", 4,
             listOf(GovernmentType.DEMOCRACY, GovernmentType.SOCIALISM),
             1992, 15000,
-            listOf(LawEffect("environment", 20, EffectType.BONUS), LawEffect("economy", -5, EffectType.PENALTY))
+            listOf(LawEffect("environment", 20, EffectType.ADDITIVE), LawEffect("economy", -5, EffectType.ADDITIVE))
         ),
         // Tier 5: Future Government
         GovernmentReform(
@@ -82,7 +84,7 @@ object GovernmentReformDatabase {
             "Integrate AI into decision making", 5,
             listOf(GovernmentType.TECHNOCRACY),
             2030, 50000,
-            listOf(LawEffect("technology", 25, EffectType.BONUS), LawEffect("economy", 15, EffectType.BONUS), LawEffect("happiness", -10, EffectType.PENALTY))
+            listOf(LawEffect("technology", 25, EffectType.ADDITIVE), LawEffect("economy", 15, EffectType.ADDITIVE), LawEffect("happiness", -10, EffectType.ADDITIVE))
         )
     )
 }
