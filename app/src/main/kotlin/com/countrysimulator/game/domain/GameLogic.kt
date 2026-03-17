@@ -1,0 +1,2214 @@
+package com.countrysimulator.game.domain
+
+object GameLogic {
+
+    private val nationNamesPrefixes = listOf("United", "Republic of", "Kingdom of", "Empire of", "Federation of", "People's Union of", "Grand Duchy of")
+    private val nationNamesBases = listOf("Arstotzka", "Borginia", "Calisota", "Dinotopia", "Equestria", "Florin", "Genosha", "Hyrule", "Ishval", "Jalabad", "Krakozhia", "Latveria", "Moldavia", "Narnia", "Osterlich", "Panem", "Qumar", "Ruritania", "Sokovia", "Wakanda")
+
+    fun generateAiNations(count: Int = 8): List<AiNation> {
+        return (1..count).map {
+            val name = "${nationNamesPrefixes.random()} ${nationNamesBases.random()}"
+            val personality = AiPersonality.values().random()
+            val govType = GovernmentType.values().random()
+
+            val baseMilitary = if (personality == AiPersonality.AGGRESSIVE) 60 else 30
+            val baseEconomy = if (personality == AiPersonality.TRADER) 60 else 40
+            val baseTech = if (personality == AiPersonality.SCIENTIFIC) 50 else 20
+
+            AiNation(
+                id = "ai_$it",
+                name = name,
+                governmentType = govType,
+                personality = personality,
+                stats = CountryStats(
+                    military = baseMilitary + (-10..10).random(),
+                    economy = baseEconomy + (-10..10).random(),
+                    technology = baseTech + (-5..5).random(),
+                    population = (500000..5000000).random()
+                ),
+                treasury = (2000..8000).random()
+            )
+        }
+    }
+
+    fun generateInitialRelations(aiNations: List<AiNation>): List<DiplomaticRelation> {
+        return aiNations.map { ai ->
+            DiplomaticRelation(
+                nationName = ai.name,
+                nationId = ai.id,
+                relationScore = 50 + (-20..20).random(),
+                status = RelationStatus.NEUTRAL
+            )
+        }
+    }
+
+    fun generateInitialCountry(name: String, governmentType: GovernmentType): Pair<Country, List<AiNation>> {
+        val aiNations = generateAiNations()
+        val relations = generateInitialRelations(aiNations)
+
+        val parties = listOf(
+            PoliticalParty("Liberal Alliance", Ideology.LIBERAL, 30, 20),
+            PoliticalParty("Conservative Union", Ideology.CONSERVATIVE, 30, 20),
+            PoliticalParty("Socialist Front", Ideology.SOCIALIST, 20, 10),
+            PoliticalParty("Nationalist Party", Ideology.NATIONALIST, 10, 5),
+            PoliticalParty("Green Party", Ideology.ECOLOGIST, 10, 5)
+        )
+
+        val factions = listOf(
+            PoliticalFaction("Military Elite", 70, 30),
+            PoliticalFaction("Labor Unions", 60, 20),
+            PoliticalFaction("Business Oligarchs", 50, 25),
+            PoliticalFaction("Religious Groups", 80, 15),
+            PoliticalFaction("Student Activists", 40, 10)
+        )
+
+        val ministers = listOf(
+            Minister("m1", "John Smith", MinisterRole.ECONOMY, 60, 5, 80),
+            Minister("m2", "Elena Vance", MinisterRole.DEFENSE, 75, 10, 90),
+            Minister("m3", "Marcus Cole", MinisterRole.INTERIOR, 55, 20, 70)
+        )
+
+        val laws = listOf(
+            Law("l1", "Progressive Taxation", "Increases revenue but lowers happiness of the wealthy.", false, 0, 0, 10, -5, -5),
+            Law("l2", "Military Draft", "Increases military power but lowers happiness.", false, 0, -5, -10, -15, 0),
+            Law("l3", "Universal Healthcare", "Increases healthcare and happiness but costs treasury.", false, 2000, 5, 0, 15, -2)
+        )
+
+        val country = Country(
+            name = name,
+            governmentType = governmentType,
+            stats = CountryStats(),
+            resources = Resources(),
+            diplomaticRelations = relations,
+            year = 2024,
+            treasury = 10000,
+            politicalParties = parties,
+            factions = factions,
+            ministers = ministers,
+            activeLaws = laws
+        )
+        return Pair(country, aiNations)
+    }
+
+    fun calculateTurnIncome(country: Country): Int {
+        val baseIncome = country.stats.population / 10000
+        val economyMultiplier = country.stats.economy / 50.0
+        val happinessFactor = country.stats.happiness / 100.0
+        val techBonus = country.stats.technology / 200.0
+        val income = (baseIncome * economyMultiplier * happinessFactor * (1 + techBonus)).toInt()
+        return (income * country.taxRate.multiplier).toInt().coerceAtLeast(500)
+    }
+
+    fun setTaxRate(state: GameState, rate: TaxRate): GameState {
+        return state.copy(country = state.country.copy(taxRate = rate))
+    }
+
+    fun sellResource(state: GameState, resource: String, amount: Int): GameState {
+        var country = state.country
+        var addedTreasury = 0
+        
+        when (resource) {
+            "Food" -> {
+                if (country.resources.food >= amount) {
+                    addedTreasury = amount * state.globalMarket.foodPrice
+                    country = country.copy(resources = country.resources.copy(food = country.resources.food - amount))
+                }
+            }
+            "Energy" -> {
+                if (country.resources.energy >= amount) {
+                    addedTreasury = amount * state.globalMarket.energyPrice
+                    country = country.copy(resources = country.resources.copy(energy = country.resources.energy - amount))
+                }
+            }
+            "Materials" -> {
+                if (country.resources.materials >= amount) {
+                    addedTreasury = amount * state.globalMarket.materialsPrice
+                    country = country.copy(resources = country.resources.copy(materials = country.resources.materials - amount))
+                }
+            }
+        }
+        
+        return state.copy(country = country.copy(treasury = country.treasury + addedTreasury))
+    }
+
+    fun declareWar(state: GameState, targetId: String): GameState {
+        val target = state.aiNations.find { it.id == targetId } ?: return state
+        val country = state.country
+
+        // FIX: Create the War Theater so combat actually happens
+        val newTheater = WarTheater(
+            id = "wt_${System.currentTimeMillis()}",
+            name = "War with ${target.name}",
+            enemyNationId = targetId,
+            playerStrength = country.stats.military,
+            enemyStrength = target.stats.military
+        )
+
+        val newRelations = country.diplomaticRelations.map {
+            if (it.nationId == targetId) {
+                it.copy(status = RelationStatus.ENEMY, isAtWar = true, relationScore = 0)
+            } else it
+        }
+
+        val newMilitary = country.military.copy(warTheaters = country.military.warTheaters + newTheater)
+
+        return state.copy(country = country.copy(
+            diplomaticRelations = newRelations,
+            military = newMilitary,
+            stats = country.stats.copy(stability = (country.stats.stability - 15).coerceAtLeast(0))
+        ))
+    }
+
+    // Hoisted business logic functions from ViewModel
+    fun investInEconomy(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun recruitMilitary(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(military = (country.stats.military + 10).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun improveInfrastructure(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    fun investInTechnology(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 12).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun improveHappiness(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 10).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun investInEducation(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(education = (country.stats.education + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    fun investInHealthcare(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(healthcare = (country.stats.healthcare + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun improveEnvironment(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun fightCrime(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(crime = (country.stats.crime - 10).coerceAtLeast(0)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun buyFood(country: Country): Country {
+        if (country.treasury >= 500) {
+            return country.copy(
+                resources = country.resources.copy(food = (country.resources.food + 50).coerceAtMost(country.resources.maxFood)),
+                treasury = country.treasury - 500
+            )
+        }
+        return country
+    }
+
+    fun buyEnergy(country: Country): Country {
+        if (country.treasury >= 600) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 50).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 600
+            )
+        }
+        return country
+    }
+
+    fun buyMaterials(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                resources = country.resources.copy(materials = (country.resources.materials + 30).coerceAtMost(country.resources.maxMaterials)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun runPropaganda(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(
+                    propaganda = (country.stats.propaganda + 15).coerceAtMost(100),
+                    happiness = (country.stats.happiness + 5).coerceAtMost(100),
+                    stability = (country.stats.stability + 10).coerceAtMost(100)
+                ),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun improveRelations(country: Country, nationId: String): Country {
+        if (country.treasury >= 500) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(relationScore = (it.relationScore + 10).coerceAtMost(100)) else it
+            }
+            return country.copy(diplomaticRelations = rels, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun sendForeignAid(country: Country, nationId: String): Country {
+        if (country.treasury >= 2000) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(relationScore = (it.relationScore + 15).coerceAtMost(100)) else it
+            }
+            return country.copy(
+                diplomaticRelations = rels,
+                treasury = country.treasury - 2000,
+                stats = country.stats.copy(softPower = (country.stats.softPower + 5).coerceAtMost(100))
+            )
+        }
+        return country
+    }
+
+    fun offerTrade(country: Country, nationId: String): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore >= 40 && !relation.hasTradeAgreement) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(hasTradeAgreement = true) else it
+            }
+            return country.copy(diplomaticRelations = rels)
+        }
+        return country
+    }
+
+    fun formAlliance(country: Country, nationId: String): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore >= 80 && !relation.hasAlliance) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(hasAlliance = true, status = RelationStatus.ALLY) else it
+            }
+            return country.copy(diplomaticRelations = rels)
+        }
+        return country
+    }
+
+    fun imposeSanctions(country: Country, nationId: String, sanctionType: SanctionType): Country {
+        if (country.treasury >= 500) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId && !it.sanctions.contains(sanctionType)) {
+                    it.copy(
+                        sanctions = it.sanctions + sanctionType,
+                        relationScore = (it.relationScore - 30).coerceAtLeast(0),
+                        status = if (it.relationScore - 30 < 20) RelationStatus.ENEMY else it.status
+                    )
+                } else it
+            }
+            return country.copy(diplomaticRelations = rels, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun launchSpyMission(country: Country, targetId: String, type: SpyMissionType, aiNations: List<AiNation>): Country {
+        if (country.treasury >= type.cost) {
+            val targetName = aiNations.find { it.id == targetId }?.name ?: "Unknown"
+            val mission = SpyMission(
+                "spy_${System.currentTimeMillis()}",
+                targetId,
+                targetName,
+                type,
+                (40..80).random(),
+                type.duration,
+                50
+            )
+            return country.copy(activeSpyMissions = country.activeSpyMissions + mission, treasury = country.treasury - type.cost)
+        }
+        return country
+    }
+
+    fun recruitTroops(country: Country, branch: String): Country {
+        if (country.treasury >= 500) {
+            val mil = country.military
+            val updated = when (branch) {
+                "Army" -> mil.copy(army = mil.army.copy(manpower = mil.army.manpower + 1000))
+                "Navy" -> mil.copy(navy = mil.navy.copy(manpower = mil.navy.manpower + 500))
+                else -> mil.copy(airForce = mil.airForce.copy(manpower = mil.airForce.manpower + 200))
+            }
+            return country.copy(military = updated, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun upgradeEquipment(country: Country, branch: String): Country {
+        if (country.treasury >= 2000) {
+            val mil = country.military
+            val updated = when (branch) {
+                "Army" -> mil.copy(army = mil.army.copy(equipmentLevel = (mil.army.equipmentLevel + 1).coerceAtMost(10)))
+                "Navy" -> mil.copy(navy = mil.navy.copy(equipmentLevel = (mil.navy.equipmentLevel + 1).coerceAtMost(10)))
+                else -> mil.copy(airForce = mil.airForce.copy(equipmentLevel = (mil.airForce.equipmentLevel + 1).coerceAtMost(10)))
+            }
+            return country.copy(military = updated, treasury = country.treasury - 2000)
+        }
+        return country
+    }
+
+    fun startNuclearProgram(country: Country): Country {
+        if (country.treasury >= 10000 && !country.military.nuclearProgram.hasProgram) {
+            return country.copy(
+                military = country.military.copy(nuclearProgram = country.military.nuclearProgram.copy(hasProgram = true)),
+                treasury = country.treasury - 10000
+            )
+        }
+        return country
+    }
+
+    fun hireMercenaries(country: Country): Country {
+        if (country.treasury >= 1500) {
+            val mercGroup = MercenaryGroup(
+                "Mercs ${System.currentTimeMillis() % 100}",
+                (10..20).random(),
+                200,
+                10
+            )
+            return country.copy(
+                military = country.military.copy(mercenaries = country.military.mercenaries + mercGroup),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun changeDoctrine(country: Country, doc: MilitaryDoctrine): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(military = country.military.copy(doctrine = doc), treasury = country.treasury - 1000)
+        }
+        return country
+    }
+
+    fun toggleLaw(country: Country, id: String): Country {
+        val law = country.activeLaws.find { it.id == id } ?: return country
+        val cost = if (!law.isActive) law.cost else 0
+        if (country.treasury >= cost || law.isActive) {
+            return country.copy(
+                activeLaws = country.activeLaws.map { if (it.id == id) it.copy(isActive = !it.isActive) else it },
+                treasury = country.treasury - cost
+            )
+        }
+        return country
+    }
+
+    fun bribeFaction(country: Country, name: String): Country {
+        if (country.treasury >= 2000) {
+            return country.copy(
+                factions = country.factions.map { if (it.name == name) it.copy(loyalty = (it.loyalty + 20).coerceAtMost(100)) else it },
+                treasury = country.treasury - 2000
+            )
+        }
+        return country
+    }
+
+    fun hireMinister(country: Country, name: String, role: MinisterRole): Country {
+        if (country.treasury >= 3000) {
+            val newMinister = Minister("m_${System.currentTimeMillis()}", name, role, (40..80).random(), (0..20).random(), 100)
+            return country.copy(
+                ministers = country.ministers.filter { it.role != role } + newMinister,
+                treasury = country.treasury - 3000
+            )
+        }
+        return country
+    }
+
+    fun triggerElection(country: Country): Country {
+        if (country.election?.isActive != true) {
+            return country.copy(election = Election(year = country.year, isActive = true, turnsRemaining = 1))
+        }
+        return country
+    }
+
+    // ========== NEW UPGRADE CATEGORIES (27+) ==========
+
+    // 1. Agriculture - Farm subsidies, food production
+    fun upgradeAgriculture(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 5).coerceAtMost(100)),
+                resources = country.resources.copy(food = (country.resources.food + 40).coerceAtMost(country.resources.maxFood)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    // 2. Industry - Manufacturing, factories
+    fun upgradeIndustry(country: Country): Country {
+        if (country.treasury >= 2000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 10).coerceAtMost(100), environment = (country.stats.environment - 5).coerceAtLeast(0)),
+                treasury = country.treasury - 2000
+            )
+        }
+        return country
+    }
+
+    // 3. Energy - Power plants, renewable energy
+    fun upgradeEnergy(country: Country): Country {
+        if (country.treasury >= 1800) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 40).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 1800
+            )
+        }
+        return country
+    }
+
+    // 4. Transportation - Roads, railways, ports
+    fun upgradeTransportation(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100), economy = (country.stats.economy + 5).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    // 5. Housing - Public housing, urban development
+    fun upgradeHousing(country: Country): Country {
+        if (country.treasury >= 1300) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), stability = (country.stats.stability + 3).coerceAtMost(100)),
+                treasury = country.treasury - 1300
+            )
+        }
+        return country
+    }
+
+    // 6. Social Services - Welfare, benefits
+    fun upgradeSocialServices(country: Country): Country {
+        if (country.treasury >= 1600) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 12).coerceAtMost(100), economy = (country.stats.economy - 3).coerceAtLeast(0)),
+                treasury = country.treasury - 1600
+            )
+        }
+        return country
+    }
+
+    // 7. Immigration - Border control, integration
+    fun upgradeImmigration(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(population = country.stats.population + 10000, stability = (country.stats.stability - 2).coerceAtLeast(0)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    // 8. National Security - Internal security, police
+    fun upgradeNationalSecurity(country: Country): Country {
+        if (country.treasury >= 1400) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 10).coerceAtMost(100), crime = (country.stats.crime - 8).coerceAtLeast(0)),
+                treasury = country.treasury - 1400
+            )
+        }
+        return country
+    }
+
+    // 9. Emergency Services - Fire, ambulance, disaster response
+    fun upgradeEmergencyServices(country: Country): Country {
+        if (country.treasury >= 1100) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100), happiness = (country.stats.happiness + 3).coerceAtMost(100)),
+                treasury = country.treasury - 1100
+            )
+        }
+        return country
+    }
+
+    // 10. Research - Universities, labs, R&D
+    fun upgradeResearch(country: Country): Country {
+        if (country.treasury >= 2200) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 15).coerceAtMost(100)),
+                treasury = country.treasury - 2200
+            )
+        }
+        return country
+    }
+
+    // 11. Space Program - Satellites, space exploration
+    fun upgradeSpaceProgram(country: Country): Country {
+        if (country.treasury >= 3500) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 10).coerceAtMost(100), softPower = (country.stats.softPower + 8).coerceAtMost(100)),
+                treasury = country.treasury - 3500
+            )
+        }
+        return country
+    }
+
+    // 12. Trade - Commerce, markets, exports
+    fun upgradeTrade(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    // 13. Banking - Financial sector, central bank
+    fun upgradeBanking(country: Country): Country {
+        if (country.treasury >= 1700) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 6).coerceAtMost(100), corruption = (country.stats.corruption + 2).coerceAtMost(100)),
+                treasury = country.treasury - 1700
+            )
+        }
+        return country
+    }
+
+    // 14. Tourism - Travel, hospitality
+    fun upgradeTourism(country: Country): Country {
+        if (country.treasury >= 900) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 8).coerceAtMost(100), economy = (country.stats.economy + 5).coerceAtMost(100)),
+                treasury = country.treasury - 900
+            )
+        }
+        return country
+    }
+
+    // 15. Culture - Arts, museums, heritage
+    fun upgradeCulture(country: Country): Country {
+        if (country.treasury >= 850) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 10).coerceAtMost(100), happiness = (country.stats.happiness + 5).coerceAtMost(100)),
+                treasury = country.treasury - 850
+            )
+        }
+        return country
+    }
+
+    // 16. Sports - Athletic programs, stadiums
+    fun upgradeSports(country: Country): Country {
+        if (country.treasury >= 750) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), softPower = (country.stats.softPower + 5).coerceAtMost(100)),
+                treasury = country.treasury - 750
+            )
+        }
+        return country
+    }
+
+    // 17. Media - Press, broadcasting, internet
+    fun upgradeMedia(country: Country): Country {
+        if (country.treasury >= 950) {
+            return country.copy(
+                stats = country.stats.copy(propaganda = (country.stats.propaganda + 10).coerceAtMost(100), softPower = (country.stats.softPower + 3).coerceAtMost(100)),
+                treasury = country.treasury - 950
+            )
+        }
+        return country
+    }
+
+    // 18. Religion - Religious affairs, places of worship
+    fun upgradeReligion(country: Country): Country {
+        if (country.treasury >= 600) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 6).coerceAtMost(100), happiness = (country.stats.happiness + 4).coerceAtMost(100)),
+                treasury = country.treasury - 600
+            )
+        }
+        return country
+    }
+
+    // 19. Youth - Youth programs, recreation
+    fun upgradeYouth(country: Country): Country {
+        if (country.treasury >= 700) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 6).coerceAtMost(100), education = (country.stats.education + 3).coerceAtMost(100)),
+                treasury = country.treasury - 700
+            )
+        }
+        return country
+    }
+
+    // 20. Elderly - Elder care, pensions
+    fun upgradeElderly(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), stability = (country.stats.stability + 3).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    // 21. Labor - Workers rights, unions
+    fun upgradeLabor(country: Country): Country {
+        if (country.treasury >= 550) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 5).coerceAtMost(100), economy = (country.stats.economy - 2).coerceAtLeast(0)),
+                treasury = country.treasury - 550
+            )
+        }
+        return country
+    }
+
+    // 22. Anti-Corruption - Transparency, oversight
+    fun upgradeAntiCorruption(country: Country): Country {
+        if (country.treasury >= 1100) {
+            return country.copy(
+                stats = country.stats.copy(corruption = (country.stats.corruption - 12).coerceAtLeast(0), stability = (country.stats.stability + 5).coerceAtMost(100)),
+                treasury = country.treasury - 1100
+            )
+        }
+        return country
+    }
+
+    // 23. Cybersecurity - Digital security, IT infrastructure
+    fun upgradeCybersecurity(country: Country): Country {
+        if (country.treasury >= 1300) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 6).coerceAtMost(100), security = (country.stats.security + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1300
+            )
+        }
+        return country
+    }
+
+    // 24. Infrastructure - General infrastructure (already exists but enhanced)
+    fun upgradeInfrastructureGeneral(country: Country): Country {
+        if (country.treasury >= 1800) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 8).coerceAtMost(100), economy = (country.stats.economy + 6).coerceAtMost(100)),
+                treasury = country.treasury - 1800
+            )
+        }
+        return country
+    }
+
+    // 25. Telecommunications - Internet, phones
+    fun upgradeTelecommunications(country: Country): Country {
+        if (country.treasury >= 1400) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 8).coerceAtMost(100), economy = (country.stats.economy + 4).coerceAtMost(100)),
+                treasury = country.treasury - 1400
+            )
+        }
+        return country
+    }
+
+    // 26. Nuclear - Civil nuclear power
+    fun upgradeNuclear(country: Country): Country {
+        if (country.treasury >= 5000) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 60).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 5000
+            )
+        }
+        return country
+    }
+
+    // 27. Mining - Resource extraction
+    fun upgradeMining(country: Country): Country {
+        if (country.treasury >= 1600) {
+            return country.copy(
+                resources = country.resources.copy(materials = (country.resources.materials + 35).coerceAtMost(country.resources.maxMaterials)),
+                stats = country.stats.copy(environment = (country.stats.environment - 5).coerceAtLeast(0)),
+                treasury = country.treasury - 1600
+            )
+        }
+        return country
+    }
+
+    // 28. Forestry - Forest management
+    fun upgradeForestry(country: Country): Country {
+        if (country.treasury >= 900) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 12).coerceAtMost(100)),
+                treasury = country.treasury - 900
+            )
+        }
+        return country
+    }
+
+    // 29. Fisheries - Ocean resources
+    fun upgradeFisheries(country: Country): Country {
+        if (country.treasury >= 750) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 4).coerceAtMost(100), environment = (country.stats.environment + 3).coerceAtMost(100)),
+                treasury = country.treasury - 750
+            )
+        }
+        return country
+    }
+
+    // 30. Foreign Aid - International assistance
+    fun upgradeForeignAid(country: Country): Country {
+        if (country.treasury >= 2500) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 15).coerceAtMost(100), economy = (country.stats.economy + 3).coerceAtMost(100)),
+                treasury = country.treasury - 2500
+            )
+        }
+        return country
+    }
+
+    fun getGovernmentBonus(type: GovernmentType): (CountryStats) -> CountryStats {
+        return { stats ->
+            stats.copy(
+                economy = (stats.economy + type.economyBonus).coerceAtMost(100),
+                military = (stats.military + type.militaryBonus).coerceAtMost(100),
+                happiness = (stats.happiness + type.happinessBonus).coerceIn(0, 100),
+                stability = (stats.stability + type.stabilityBonus).coerceIn(0, 100),
+                technology = (stats.technology + type.techBonus).coerceAtMost(100)
+            )
+        }
+    }
+
+    fun calculateResourceProduction(resources: Resources, stats: CountryStats): Resources {
+        val foodChange = when {
+            stats.economy > 70 -> 15
+            stats.economy > 40 -> 10
+            stats.economy > 20 -> 5
+            else -> 0
+        } - (stats.population / 100000)
+
+        val energyChange = when {
+            stats.technology > 70 -> 20
+            stats.technology > 40 -> 15
+            stats.technology > 20 -> 10
+            else -> 5
+        } - (stats.population / 200000)
+
+        val materialsChange = when {
+            stats.economy > 60 -> 10
+            stats.economy > 30 -> 5
+            else -> 2
+        }
+
+        return resources.copy(
+            food = (resources.food + foodChange).coerceIn(0, resources.maxFood),
+            energy = (resources.energy + energyChange).coerceIn(0, resources.maxEnergy),
+            materials = (resources.materials + materialsChange).coerceIn(0, resources.maxMaterials)
+        )
+    }
+
+    fun checkGameOver(country: Country): GameOverReason? {
+        return when {
+            country.treasury < -5000 -> GameOverReason.BANKRUPTCY
+            country.stats.happiness < 5 -> GameOverReason.REVOLUTION
+            country.stats.military < 5 && (1..10).random() == 1 -> GameOverReason.INVASION
+            country.stats.technology < 3 -> GameOverReason.TECH_FAILURE
+            country.resources.food < 5 -> GameOverReason.FAMINE
+            country.stats.environment < 3 -> GameOverReason.ENVIRONMENTAL_COLLAPSE
+            country.stats.stability < 5 -> GameOverReason.CIVIL_WAR
+            else -> null
+        }
+    }
+
+    private fun calculateMilitaryPower(military: Military): Int {
+        val branchPower = (military.army.manpower + military.navy.manpower + military.airForce.manpower) / 300
+        val equipBonus = (military.army.equipmentLevel + military.navy.equipmentLevel + military.airForce.equipmentLevel) * 2
+        val expBonus = (military.army.experience + military.navy.experience + military.airForce.experience) / 10
+        val mercPower = military.mercenaries.sumOf { it.power }
+        val nukePower = military.nuclearProgram.warheads * 10
+
+        return (branchPower + equipBonus + expBonus + mercPower + nukePower).coerceIn(0, 100)
+    }
+
+    private fun processNuclearProgram(program: NuclearProgram): Pair<NuclearProgram, Boolean> {
+        if (!program.hasProgram) return Pair(program, false)
+
+        var newProgress = program.researchProgress + 5
+        var builtNew = false
+        var newWarheads = program.warheads
+
+        if (newProgress >= 100) {
+            newProgress = 0
+            newWarheads += 1
+            builtNew = true
+        }
+
+        return Pair(program.copy(researchProgress = newProgress, warheads = newWarheads), builtNew)
+    }
+
+    private fun processWarTheaters(theaters: List<WarTheater>, playerPower: Int, aiNations: List<AiNation>): Pair<List<WarTheater>, List<String>> {
+        val events = mutableListOf<String>()
+        val newTheaters = theaters.map { theater ->
+            if (!theater.isActive) return@map theater
+
+            val enemy = aiNations.find { it.id == theater.enemyNationId }
+            val enemyPower = enemy?.stats?.military ?: 50
+
+            val battleRoll = (1..100).random() + (playerPower - enemyPower)
+            var territoryChange = 0
+
+            if (battleRoll > 60) territoryChange = 5
+            else if (battleRoll < 40) territoryChange = -5
+
+            val newTerritory = (theater.territoryControlled + territoryChange).coerceIn(0, 100)
+
+            if (territoryChange > 0) events.add("War in ${theater.name}: You gained ground!")
+            else if (territoryChange < 0) events.add("War in ${theater.name}: Enemy pushed back!")
+
+            theater.copy(territoryControlled = newTerritory, playerStrength = playerPower, enemyStrength = enemyPower)
+        }
+
+        return Pair(newTheaters, events)
+    }
+
+    private fun processAiEconomy(ai: AiNation): AiNation {
+        return ai.copy(treasury = ai.treasury + (ai.stats.economy * 10))
+    }
+
+    private fun generateRandomResolution(year: Int, aiNations: List<AiNation>): UNResolution {
+        val types = UNResolutionType.values()
+        val type = types.random()
+        val targetNation = if (type != UNResolutionType.GLOBAL_INITIATIVE) aiNations.random() else null
+        return UNResolution(
+            id = "un_res_${year}_${(1..1000).random()}",
+            type = type,
+            targetNationId = targetNation?.id,
+            description = "UN Resolution on ${type.displayName}",
+            yearProposed = year
+        )
+    }
+
+    fun processElection(country: Country): Country {
+        val election = country.election ?: return country
+        if (!election.isActive) return country
+
+        val newTurnsRemaining = election.turnsRemaining - 1
+        if (newTurnsRemaining > 0) {
+            return country.copy(election = election.copy(turnsRemaining = newTurnsRemaining))
+        }
+
+        val results = country.politicalParties.associate { it.name to (it.popularity + (-10..10).random()).coerceIn(0, 100) }
+        val winner = results.maxBy { it.value }.key
+
+        val newStats = if (country.governmentType == GovernmentType.DEMOCRACY) {
+            country.stats.copy(stability = (country.stats.stability + 10).coerceAtMost(100))
+        } else {
+            country.stats.copy(stability = (country.stats.stability - 15).coerceAtLeast(0))
+        }
+
+        return country.copy(
+            election = election.copy(isActive = false, turnsRemaining = 0, results = results),
+            stats = newStats,
+            eventHistory = listOf("Election Year: $winner won the election!") + country.eventHistory
+        )
+    }
+
+    fun processTurn(currentState: GameState): GameState {
+        var country = currentState.country
+        val messages = mutableListOf<String>()
+
+        // 1. Process Election
+        country = processElection(country)
+
+        // 2. Calculate Income
+        val grossIncome = calculateTurnIncome(country)
+        var newTreasury = country.treasury + grossIncome
+        var newStats = country.stats.copy()
+        var expenses = 0
+
+        // 3. Minister Bonuses
+        country.ministers.forEach { minister ->
+            when (minister.role) {
+                MinisterRole.ECONOMY -> newStats = newStats.copy(economy = (newStats.economy + minister.skill / 20).coerceAtMost(100))
+                MinisterRole.DEFENSE -> newStats = newStats.copy(military = (newStats.military + minister.skill / 20).coerceAtMost(100))
+                MinisterRole.FOREIGN_AFFAIRS -> newStats = newStats.copy(softPower = (newStats.softPower + minister.skill / 20).coerceAtMost(100))
+                else -> {}
+            }
+        }
+
+        // 4. Active Laws effects
+        country.activeLaws.filter { it.isActive }.forEach { law ->
+            newStats = newStats.copy(
+                stability = (newStats.stability + law.stabilityEffect).coerceIn(0, 100),
+                economy = (newStats.economy + law.economyEffect).coerceIn(0, 100),
+                happiness = (newStats.happiness + law.happinessEffect).coerceIn(0, 100),
+                corruption = (newStats.corruption + law.corruptionEffect).coerceIn(0, 100)
+            )
+            val cost = law.cost / 10
+            newTreasury -= cost
+            expenses += cost
+        }
+
+        // 5. Apply Tax Happiness effect
+        newStats = newStats.copy(happiness = (newStats.happiness + country.taxRate.happinessEffect).coerceIn(0, 100))
+
+        // 6. Domestic Unrest mechanics (NEW FEATURE)
+        if (newStats.crime > 70) {
+            val crimeCost = (newTreasury * 0.05).toInt()
+            newTreasury -= crimeCost
+            expenses += crimeCost
+            messages.add("High crime rate cost you $$crimeCost.")
+        }
+        
+        val disloyalFactions = country.factions.filter { it.loyalty < 20 }
+        if (disloyalFactions.isNotEmpty()) {
+            newStats = newStats.copy(stability = (newStats.stability - 5).coerceAtLeast(0))
+            messages.add("Disloyal factions are causing instability.")
+        }
+
+        // 7. Resource Production
+        var newResources = calculateResourceProduction(country.resources, newStats)
+
+        // 8. Government Bonus
+        newStats = getGovernmentBonus(country.governmentType)(newStats)
+
+        // 9. Corruption effect
+        if (newStats.corruption > 50) {
+            val corruptionLoss = (newTreasury * (newStats.corruption / 200.0)).toInt()
+            newTreasury -= corruptionLoss
+            expenses += corruptionLoss
+            newStats = newStats.copy(stability = (newStats.stability - 2).coerceAtLeast(0))
+        }
+
+        // 10. Military & Warfare Processing
+        var newMilitary = country.military
+
+        // Calculate Military Power from Branches
+        val calculatedPower = calculateMilitaryPower(newMilitary)
+        newStats = newStats.copy(military = calculatedPower.coerceIn(0, 100))
+
+        // Process Nuclear Program
+        val nukeResult = processNuclearProgram(newMilitary.nuclearProgram)
+        newMilitary = newMilitary.copy(nuclearProgram = nukeResult.first)
+        if (nukeResult.second) {
+            newStats = newStats.copy(softPower = (newStats.softPower - 5).coerceAtLeast(0))
+            messages.add("New nuclear warhead produced. International concern rises.")
+        }
+
+        // Process Mercenaries
+        val activeMercs = newMilitary.mercenaries.map { it.copy(contractTurnsRemaining = it.contractTurnsRemaining - 1) }.filter { it.contractTurnsRemaining > 0 }
+        val mercCost = activeMercs.sumOf { it.costPerTurn }
+        newTreasury -= mercCost
+        expenses += mercCost
+        newMilitary = newMilitary.copy(mercenaries = activeMercs)
+
+        // Process War Theaters
+        val theaterResult = processWarTheaters(newMilitary.warTheaters, newStats.military, currentState.aiNations)
+        newMilitary = newMilitary.copy(warTheaters = theaterResult.first)
+        messages.addAll(theaterResult.second)
+
+        // 11. AI Processing with Active Diplomacy (NEW FEATURE)
+        var aiWarDeclared = false
+        var aiTradeOffered = false
+        
+        val newAiNations = currentState.aiNations.map { ai ->
+            var updatedAi = processAiEconomy(ai)
+            
+            val relation = country.diplomaticRelations.find { it.nationId == ai.id }
+            if (relation != null && !relation.isAtWar) {
+                // Aggressive AI may declare war
+                if (ai.personality == AiPersonality.AGGRESSIVE && relation.relationScore < 20 && (1..100).random() < 5) {
+                    aiWarDeclared = true
+                    messages.add("WARNING: ${ai.name} has declared war on you!")
+                }
+                // Trader AI may offer trade
+                else if (ai.personality == AiPersonality.TRADER && relation.relationScore > 50 && !relation.hasTradeAgreement && (1..100).random() < 10) {
+                    aiTradeOffered = true
+                    messages.add("Diplomacy: ${ai.name} offered a trade agreement.")
+                }
+            }
+            updatedAi
+        }
+
+        // Update relations if AI acted
+        var newRelations = country.diplomaticRelations
+        if (aiWarDeclared || aiTradeOffered) {
+            newRelations = newRelations.map { rel ->
+                val ai = newAiNations.find { it.id == rel.nationId }
+                if (ai != null && aiWarDeclared && ai.personality == AiPersonality.AGGRESSIVE && rel.relationScore < 20) {
+                    val defensiveTheater = WarTheater(
+                        id = "wt_ai_${ai.id}",
+                        name = "Defense against ${ai.name}",
+                        enemyNationId = ai.id,
+                        playerStrength = newStats.military,
+                        enemyStrength = ai.stats.military
+                    )
+                    newMilitary = newMilitary.copy(warTheaters = newMilitary.warTheaters + defensiveTheater)
+                    rel.copy(status = RelationStatus.ENEMY, isAtWar = true, relationScore = 0)
+                } else if (ai != null && aiTradeOffered && ai.personality == AiPersonality.TRADER && rel.relationScore > 50) {
+                    rel.copy(hasTradeAgreement = true, relationScore = rel.relationScore + 10)
+                } else rel
+            }
+        }
+
+        // 12. Sanctions Effect
+        val sanctionsPenalty = country.diplomaticRelations.sumOf { rel -> rel.sanctions.size * 5 }
+        if (sanctionsPenalty > 0) {
+            newStats = newStats.copy(economy = (newStats.economy - sanctionsPenalty).coerceAtLeast(0))
+        }
+
+        // 13. Process Espionage
+        var spyMissions = country.activeSpyMissions.map { it.copy(turnsRemaining = it.turnsRemaining - 1) }
+        val completedMissions = spyMissions.filter { it.turnsRemaining <= 0 }
+        spyMissions = spyMissions.filter { it.turnsRemaining > 0 }
+
+        completedMissions.forEach { mission ->
+            val success = (1..100).random() <= mission.successChance
+            if (success) {
+                messages.add("Mission Success: ${mission.type.displayName} in ${mission.targetNationName}")
+                when (mission.type) {
+                    SpyMissionType.GATHER_INTEL -> newStats = newStats.copy(technology = (newStats.technology + 5).coerceAtMost(100))
+                    SpyMissionType.STEAL_TECH -> newStats = newStats.copy(technology = (newStats.technology + 10).coerceAtMost(100))
+                    else -> {}
+                }
+            } else {
+                messages.add("Mission Failed: Agent caught in ${mission.targetNationName}")
+                newStats = newStats.copy(softPower = (newStats.softPower - 10).coerceAtLeast(0))
+            }
+        }
+
+        // 14. UN Process
+        var un = country.unitedNations
+        if (country.turnCount % 4 == 0) {
+            val newResolution = generateRandomResolution(country.year, currentState.aiNations)
+            un = un.copy(activeResolutions = un.activeResolutions + newResolution)
+        }
+
+        // 15. Random Events
+        val eventRoll = (1..100).random()
+        val eventThreshold = 100 - newStats.stability + 20
+        val event = if (eventRoll <= eventThreshold && events.isNotEmpty()) {
+            events.random()
+        } else null
+
+        event?.let {
+            newStats = it.effect(newStats)
+            messages.add("Event: ${it.title}")
+        }
+
+        // 16. Factions & Parties update
+        val newFactions = country.factions.map { faction ->
+            val loyaltyChange = if (newStats.happiness > 60) 2 else if (newStats.happiness < 40) -2 else 0
+            faction.copy(loyalty = (faction.loyalty + loyaltyChange + (-2..2).random()).coerceIn(0, 100))
+        }
+
+        val newParties = country.politicalParties.map { party ->
+            val popChange = if (newStats.economy > 60) 2 else if (newStats.economy < 40) -2 else 0
+            party.copy(popularity = (party.popularity + popChange + (-3..3).random()).coerceIn(0, 100))
+        }
+
+        // 17. Population & Stat Decay/Growth
+        val populationGrowth = 0.01
+        newStats = newStats.copy(
+            population = (newStats.population * (1 + populationGrowth)).toInt().coerceAtMost(100000000),
+            corruption = (newStats.corruption + (1..3).random()).coerceAtMost(100)
+        )
+
+        // 18. Soft Power Calculation
+        newStats = newStats.copy(softPower = ((newStats.economy + newStats.happiness + newStats.technology) / 3).coerceIn(0, 100))
+
+        // 19. Global Market Fluctuation
+        val globalStability = newAiNations.sumOf { it.stats.stability } / newAiNations.size.coerceAtLeast(1)
+        val newGlobalMarket = currentState.globalMarket.copy(
+            globalInstability = 100 - globalStability,
+            foodPrice = (currentState.globalMarket.foodPrice + (-1..1).random()).coerceIn(5, 50),
+            energyPrice = (currentState.globalMarket.energyPrice + (-1..1).random()).coerceIn(5, 50)
+        )
+
+        // 20. Check Game Over
+        val checkCountry = country.copy(stats = newStats, factions = newFactions, politicalParties = newParties)
+        var gameOverReason = checkGameOver(checkCountry)
+
+        if (gameOverReason == null) {
+            if (newStats.stability < 20 && (1..100).random() < 5) {
+                gameOverReason = GameOverReason.ASSASSINATION
+            } else if (newFactions.any { it.loyalty < 10 && it.power > 40 } && (1..100).random() < 10) {
+                gameOverReason = GameOverReason.COUP
+            }
+        }
+
+        // 21. Create new Country
+        val newCountry = country.copy(
+            stats = newStats,
+            resources = newResources,
+            treasury = newTreasury,
+            year = country.year + 1,
+            turnCount = country.turnCount + 1,
+            factions = newFactions,
+            politicalParties = newParties,
+            currentTermYear = country.currentTermYear + 1,
+            unitedNations = un,
+            activeSpyMissions = spyMissions,
+            military = newMilitary,
+            diplomaticRelations = newRelations
+        )
+
+        // Auto-trigger election every 4 years in Democracy
+        var finalCountry = newCountry
+        if (country.governmentType == GovernmentType.DEMOCRACY && newCountry.currentTermYear >= 4) {
+            finalCountry = newCountry.copy(
+                election = Election(year = newCountry.year, isActive = true, turnsRemaining = 1),
+                currentTermYear = 0
+            )
+        }
+
+        // 22. Build Turn Summary
+        val summary = TurnSummary(grossIncome, expenses, grossIncome - expenses, messages)
+
+        // 23. Update Event History
+        val newEventHistory = mutableListOf<String>()
+        event?.let { newEventHistory.add("Year ${finalCountry.year}: ${it.title}") }
+        messages.filter { it != "Event: ${event?.title}" }.forEach { newEventHistory.add("Year ${finalCountry.year}: $it") }
+        newEventHistory.addAll(finalCountry.turnCount.coerceAtMost(10).let { finalCountry.eventHistory.take(it) })
+
+        return currentState.copy(
+            country = finalCountry.copy(eventHistory = newEventHistory),
+            aiNations = newAiNations,
+            globalMarket = newGlobalMarket,
+            isGameOver = gameOverReason != null,
+            gameOverReason = gameOverReason,
+            lastEvent = event,
+            eventHistory = newEventHistory,
+            newsHeadline = event?.title ?: messages.firstOrNull(),
+            turnSummary = summary
+        )
+    }
+
+    // All events are defined here - keeping the original 25+ events
+    private val events = listOf(
+        GameEvent(
+            id = "economic_boom",
+            title = "Economic Boom",
+            description = "Trade routes are flourishing! Your economy gets a major boost.",
+            category = EventCategory.ECONOMIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(economy = (stats.economy + 10).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Invest in Industry", "Build new factories") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5), treasury - 1000, resources)
+                },
+                EventOption("Save Treasury", "Bank the profits") { stats, treasury, resources ->
+                    Triple(stats, treasury + 2000, resources)
+                },
+                EventOption("Distribute Wealth", "Boost citizen morale") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 10), treasury, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "natural_disaster",
+            title = "Natural Disaster",
+            description = "A powerful earthquake has struck! Infrastructure damaged.",
+            category = EventCategory.DISASTER,
+            severity = EventSeverity.MAJOR,
+            effect = { stats -> stats.copy(stability = (stats.stability - 15).coerceAtLeast(0), population = (stats.population - 50000).coerceAtLeast(1)) },
+            options = listOf(
+                EventOption("Emergency Aid", "Deploy resources") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 5), treasury - 1500, resources)
+                },
+                EventOption("Focus on Military", "Secure the nation") { stats, treasury, resources ->
+                    Triple(stats.copy(military = stats.military + 10), treasury - 500, resources)
+                },
+                EventOption("Request International Aid", "Ask for help") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 5), treasury + 500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "scientific_breakthrough",
+            title = "Scientific Breakthrough",
+            description = "Your scientists have made a major discovery!",
+            category = EventCategory.SCIENTIFIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(technology = (stats.technology + 15).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Patent Technology", "Commercialize it") { stats, treasury, resources ->
+                    Triple(stats.copy(economy = stats.economy + 10), treasury + 3000, resources)
+                },
+                EventOption("Share with World", "Build relations") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 10), treasury, resources)
+                },
+                EventOption("Military Application", "Weaponize it") { stats, treasury, resources ->
+                    Triple(stats.copy(military = stats.military + 15), treasury - 1000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "political_unrest",
+            title = "Political Unrest",
+            description = "Citizens are protesting in the streets demanding change.",
+            category = EventCategory.POLITICAL,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(happiness = (stats.happiness - 15).coerceAtLeast(0), stability = (stats.stability - 10).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Grant Reforms", "Meet demands") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 20, economy = stats.economy - 10), treasury - 1500, resources)
+                },
+                EventOption("Suppress Protests", "Use force") { stats, treasury, resources ->
+                    Triple(stats.copy(military = stats.military + 10, happiness = stats.happiness - 10), treasury - 500, resources)
+                },
+                EventOption("Hold Elections", "Democratic solution") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 15, happiness = stats.happiness + 5), treasury - 800, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "trade_agreement",
+            title = "Trade Agreement",
+            description = "Foreign powers want to establish trade routes.",
+            category = EventCategory.ECONOMIC,
+            severity = EventSeverity.MINOR,
+            effect = { stats -> stats.copy(economy = (stats.economy + 8).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Accept Deal", "Open markets") { stats, treasury, resources ->
+                    Triple(stats.copy(economy = stats.economy + 15), treasury + 2500, resources.copy(materials = (resources.materials + 20).coerceAtMost(resources.maxMaterials)))
+                },
+                EventOption("Decline", "Stay isolated") { stats, treasury, resources ->
+                    Triple(stats, treasury, resources)
+                },
+                EventOption("Negotiate Better Terms", "Push for more") { stats, treasury, resources ->
+                    Triple(stats.copy(economy = stats.economy + 10), treasury + 1500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "pandemic_outbreak",
+            title = "Pandemic Outbreak",
+            description = "A deadly disease is spreading across your nation.",
+            category = EventCategory.DISASTER,
+            severity = EventSeverity.CATASTROPHIC,
+            effect = { stats -> stats.copy(population = (stats.population - 100000).coerceAtLeast(1), happiness = (stats.happiness - 15).coerceAtLeast(0), healthcare = (stats.healthcare - 10).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Lockdown Measures", "Close everything") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 10, economy = stats.economy - 10), treasury - 3000, resources)
+                },
+                EventOption("Keep Economy Open", "Prioritize business") { stats, treasury, resources ->
+                    Triple(stats.copy(population = (stats.population - 150000).coerceAtLeast(1), economy = stats.economy + 10), treasury - 1000, resources)
+                },
+                EventOption("Medical Response", "Focus on healthcare") { stats, treasury, resources ->
+                    Triple(stats.copy(healthcare = stats.healthcare + 10, population = (stats.population - 50000).coerceAtLeast(1)), treasury - 2500, resources.copy(energy = (resources.energy - 20).coerceAtLeast(0)))
+                }
+            )
+        ),
+        GameEvent(
+            id = "cultural_festival",
+            title = "Cultural Festival",
+            description = "A national festival boosts citizen morale!",
+            category = EventCategory.CULTURAL,
+            severity = EventSeverity.MINOR,
+            effect = { stats -> stats.copy(happiness = (stats.happiness + 10).coerceAtMost(100), stability = stats.stability + 5) },
+            options = listOf(
+                EventOption("Grand Celebration", "Spare no expense") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 15), treasury - 2000, resources)
+                },
+                EventOption("Modest Event", "Keep it simple") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 5), treasury - 500, resources)
+                },
+                EventOption("International Festival", "Invite foreigners") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 10, economy = stats.economy + 5), treasury - 1500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "espionage_discovery",
+            title = "Espionage Discovery",
+            description = "Foreign spies have been caught in your country!",
+            category = EventCategory.DIPLOMATIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(technology = (stats.technology - 5).coerceAtLeast(0), stability = stats.stability - 5) },
+            options = listOf(
+                EventOption("Execute Spies", "Show no mercy") { stats, treasury, resources ->
+                    Triple(stats.copy(military = stats.military + 15), treasury, resources)
+                },
+                EventOption("Exchange for Prisoners", "Diplomatic solution") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 10), treasury + 1000, resources)
+                },
+                EventOption("Turn Them", "Use as double agents") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 10, technology = stats.technology + 5), treasury - 500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "resource_discovery",
+            title = "Resource Discovery",
+            description = "Valuable resources have been found in your territory!",
+            category = EventCategory.ECONOMIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(economy = (stats.economy + 12).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Extract Quickly", "Maximum short-term gain") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology - 5, economy = stats.economy + 20, environment = stats.environment - 10), treasury + 5000, resources.copy(materials = (resources.materials + 50).coerceAtMost(resources.maxMaterials)))
+                },
+                EventOption("Sustainable Mining", "Long-term planning") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5, economy = stats.economy + 10), treasury + 2000, resources.copy(materials = (resources.materials + 30).coerceAtMost(resources.maxMaterials)))
+                },
+                EventOption("Research First", "Study the deposits") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 10), treasury - 500, resources.copy(materials = (resources.materials + 15).coerceAtMost(resources.maxMaterials)))
+                }
+            )
+        ),
+        GameEvent(
+            id = "education_reform",
+            title = "Education Reform",
+            description = "Your education system needs modernization.",
+            category = EventCategory.SOCIAL,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(education = (stats.education + 10).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Invest Heavily", "Build universities") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 15, economy = stats.economy - 5), treasury - 3000, resources)
+                },
+                EventOption("Modest Improvements", "Basic reforms") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5), treasury - 1000, resources)
+                },
+                EventOption("Focus on Vocational", "Trade schools") { stats, treasury, resources ->
+                    Triple(stats.copy(economy = stats.economy + 10, technology = stats.technology + 3), treasury - 1500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "healthcare_crisis",
+            title = "Healthcare Crisis",
+            description = "A new disease is affecting your population.",
+            category = EventCategory.SOCIAL,
+            severity = EventSeverity.MAJOR,
+            effect = { stats -> stats.copy(healthcare = (stats.healthcare - 15).coerceAtLeast(0), population = (stats.population - 30000).coerceAtLeast(1), happiness = (stats.happiness - 10).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Universal Healthcare", "Free for all") { stats, treasury, resources ->
+                    Triple(stats.copy(healthcare = stats.healthcare + 20, happiness = stats.happiness + 10), treasury - 2500, resources.copy(energy = (resources.energy - 15).coerceAtLeast(0)))
+                },
+                EventOption("Private Sector", "Let markets handle it") { stats, treasury, resources ->
+                    Triple(stats.copy(healthcare = stats.healthcare + 5, economy = stats.economy + 5), treasury - 500, resources)
+                },
+                EventOption("Research Cure", "Find the source") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 10, healthcare = stats.healthcare + 10), treasury - 2000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "environmental_disaster",
+            title = "Environmental Disaster",
+            description = "Industrial pollution has caused a major environmental crisis.",
+            category = EventCategory.ENVIRONMENTAL,
+            severity = EventSeverity.MAJOR,
+            effect = { stats -> stats.copy(environment = (stats.environment - 20).coerceAtLeast(0), population = (stats.population - 20000).coerceAtLeast(1), happiness = (stats.happiness - 10).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Green Initiative", "Clean up everything") { stats, treasury, resources ->
+                    Triple(stats.copy(environment = stats.environment + 20, economy = stats.economy - 10), treasury - 3500, resources)
+                },
+                EventOption("Continue Industrialization", "Progress over environment") { stats, treasury, resources ->
+                    Triple(stats.copy(environment = stats.environment - 10, economy = stats.economy + 15), treasury + 1000, resources)
+                },
+                EventOption("Compromise", "Balanced approach") { stats, treasury, resources ->
+                    Triple(stats.copy(environment = stats.environment + 5, economy = stats.economy + 5), treasury - 1500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "crime_wave",
+            title = "Crime Wave",
+            description = "Organized crime is threatening your nation.",
+            category = EventCategory.SOCIAL,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(crime = (stats.crime + 15).coerceAtMost(100), economy = (stats.economy - 10).coerceAtLeast(0), happiness = (stats.happiness - 5).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Tough on Crime", "Increase police") { stats, treasury, resources ->
+                    Triple(stats.copy(crime = (stats.crime - 20).coerceAtLeast(0), military = stats.military + 5), treasury - 2000, resources)
+                },
+                EventOption("Rehabilitation", "Focus on prevention") { stats, treasury, resources ->
+                    Triple(stats.copy(crime = (stats.crime - 10).coerceAtLeast(0), happiness = stats.happiness + 5), treasury - 1500, resources)
+                },
+                EventOption("Legalize Some Crimes", "Regulate vice") { stats, treasury, resources ->
+                    Triple(stats.copy(crime = (stats.crime - 5).coerceAtLeast(0), economy = stats.economy + 10), treasury + 2000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "religious_movement",
+            title = "Religious Movement",
+            description = "A new religious movement is gaining followers.",
+            category = EventCategory.CULTURAL,
+            severity = EventSeverity.MINOR,
+            effect = { stats -> stats.copy(stability = (stats.stability + 5).coerceAtMost(100), happiness = (stats.happiness + 5).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Embrace It", "State religion") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 15, happiness = stats.happiness + 10, technology = (stats.technology - 5).coerceAtLeast(0)), treasury - 500, resources)
+                },
+                EventOption("Separate Church and State", "Secular approach") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 5), treasury, resources)
+                },
+                EventOption("Suppress It", "Ban the movement") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability - 10, happiness = stats.happiness - 10), treasury - 500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "tech_company_arrival",
+            title = "Tech Giant Arrival",
+            description = "A major technology company wants to build facilities.",
+            category = EventCategory.ECONOMIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(technology = (stats.technology + 10).coerceAtMost(100), economy = (stats.economy + 5).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Welcome Them", "Tax breaks") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 15, economy = stats.economy + 10, environment = (stats.environment - 5).coerceAtLeast(0)), treasury - 2000, resources.copy(energy = (resources.energy - 20).coerceAtLeast(0)))
+                },
+                EventOption("Strict Regulations", "Protect citizens") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5, stability = stats.stability + 5), treasury + 500, resources)
+                },
+                EventOption("Reject Offer", "Keep independence") { stats, treasury, resources ->
+                    Triple(stats, treasury, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "immigration_wave",
+            title = "Immigration Wave",
+            description = "People are fleeing a neighboring conflict zone.",
+            category = EventCategory.DIPLOMATIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(population = (stats.population + 50000).coerceAtMost(100000000), economy = (stats.economy + 5).coerceAtMost(100), happiness = (stats.happiness - 5).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Open Borders", "Accept everyone") { stats, treasury, resources ->
+                    Triple(stats.copy(population = (stats.population + 100000).coerceAtMost(100000000), economy = stats.economy + 10, happiness = (stats.happiness - 5).coerceAtLeast(0)), treasury - 1500, resources.copy(food = (resources.food - 30).coerceAtLeast(0)))
+                },
+                EventOption("Selective Immigration", "Skilled workers only") { stats, treasury, resources ->
+                    Triple(stats.copy(population = (stats.population + 50000).coerceAtMost(100000000), technology = stats.technology + 5, economy = stats.economy + 5), treasury - 1000, resources.copy(food = (resources.food - 15).coerceAtLeast(0)))
+                },
+                EventOption("Close Borders", "No entry") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 5), treasury + 500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "famine",
+            title = "Famine",
+            description = "Crop failures have caused widespread food shortages.",
+            category = EventCategory.DISASTER,
+            severity = EventSeverity.CATASTROPHIC,
+            effect = { stats -> stats.copy(population = (stats.population - 80000).coerceAtLeast(1), happiness = (stats.happiness - 20).coerceAtLeast(0), stability = (stats.stability - 15).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Import Food", "Buy from abroad") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 5, population = (stats.population + 20000).coerceAtMost(100000000)), treasury - 4000, resources.copy(food = resources.maxFood))
+                },
+                EventOption("Rationing", "Fair distribution") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 10, happiness = stats.happiness - 5), treasury - 1000, resources.copy(food = (resources.food / 2).coerceAtLeast(10)))
+                },
+                EventOption("Let Market Decide", "Survival of fittest") { stats, treasury, resources ->
+                    Triple(stats.copy(population = (stats.population - 50000).coerceAtLeast(1), economy = stats.economy + 5), treasury + 1000, resources.copy(food = (resources.food / 3).coerceAtLeast(10)))
+                }
+            )
+        ),
+        GameEvent(
+            id = "energy_crisis",
+            title = "Energy Crisis",
+            description = "Your power grids are failing due to resource depletion.",
+            category = EventCategory.ENVIRONMENTAL,
+            severity = EventSeverity.MAJOR,
+            effect = { stats -> stats.copy(technology = (stats.technology - 5).coerceAtLeast(0), economy = (stats.economy - 10).coerceAtLeast(0), happiness = (stats.happiness - 5).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Build Nuclear Plant", "Long-term solution") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 10), treasury - 5000, resources.copy(energy = resources.maxEnergy, materials = (resources.materials - 30).coerceAtLeast(0)))
+                },
+                EventOption("Invest in Renewables", "Green energy") { stats, treasury, resources ->
+                    Triple(stats.copy(environment = stats.environment + 10, technology = stats.technology + 5), treasury - 3500, resources.copy(energy = (resources.energy + 50).coerceAtMost(resources.maxEnergy)))
+                },
+                EventOption("Drill for More", "Fossil fuels") { stats, treasury, resources ->
+                    Triple(stats.copy(environment = (stats.environment - 10).coerceAtLeast(0)), treasury - 1500, resources.copy(energy = resources.maxEnergy))
+                }
+            )
+        ),
+        GameEvent(
+            id = "coup_attempt",
+            title = "Coup Attempt",
+            description = "Military officers are attempting a coup!",
+            category = EventCategory.POLITICAL,
+            severity = EventSeverity.CATASTROPHIC,
+            effect = { stats -> stats.copy(stability = (stats.stability - 25).coerceAtLeast(0), military = (stats.military - 10).coerceAtLeast(0), happiness = (stats.happiness - 15).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Loyal Forces", "Fight back") { stats, treasury, resources ->
+                    val success = stats.military > 50
+                    if (success) Triple(stats.copy(stability = stats.stability + 20, military = stats.military + 10), treasury - 2000, resources)
+                    else Triple(stats.copy(stability = 10, military = 20), treasury - 5000, resources)
+                },
+                EventOption("Negotiate", "Share power") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 5, happiness = stats.happiness + 5), treasury - 3000, resources)
+                },
+                EventOption("Flee Country", "Escape to exile") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = 5, happiness = 20), treasury - 10000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "space_program",
+            title = "Space Program",
+            description = "Your nation is ready to reach for the stars.",
+            category = EventCategory.SCIENTIFIC,
+            severity = EventSeverity.MINOR,
+            effect = { stats -> stats.copy(technology = (stats.technology + 8).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Moon Landing", "Bold initiative") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 20, stability = stats.stability + 10), treasury - 8000, resources.copy(materials = (resources.materials - 30).coerceAtLeast(0)))
+                },
+                EventOption("Satellite Network", "Practical benefits") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 10, economy = stats.economy + 10), treasury - 3000, resources)
+                },
+                EventOption("Research Only", "Stay grounded") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5), treasury - 1000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "revolution",
+            title = "Revolution",
+            description = "The people demand radical change!",
+            category = EventCategory.POLITICAL,
+            severity = EventSeverity.CATASTROPHIC,
+            effect = { stats -> stats.copy(stability = (stats.stability - 30).coerceAtLeast(0), happiness = (stats.happiness - 20).coerceAtLeast(0), economy = (stats.economy - 15).coerceAtLeast(0)) },
+            options = listOf(
+                EventOption("Step Down", "Allow revolution") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = 30, happiness = 70), treasury, resources)
+                },
+                EventOption("Crush Rebellion", "Brutal suppression") { stats, treasury, resources ->
+                    Triple(stats.copy(military = stats.military + 20, stability = 80, happiness = 10), treasury - 3000, resources)
+                },
+                EventOption("Reform Government", "Meet in middle") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 20, happiness = stats.happiness + 15, economy = stats.economy - 5), treasury - 2000, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "foreign_aid",
+            title = "Foreign Aid Offer",
+            description = "International organizations offer development assistance.",
+            category = EventCategory.DIPLOMATIC,
+            severity = EventSeverity.MINOR,
+            effect = { stats -> stats.copy(economy = (stats.economy + 5).coerceAtMost(100), stability = (stats.stability + 5).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Accept Aid", "With conditions") { stats, treasury, resources ->
+                    Triple(stats.copy(education = stats.education + 10, healthcare = stats.healthcare + 10), treasury + 3000, resources.copy(food = (resources.food + 30).coerceAtMost(resources.maxFood)))
+                },
+                EventOption("Reject Aid", "Stay independent") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = stats.stability + 5), treasury, resources)
+                },
+                EventOption("Negotiate Better", "More conditions") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5), treasury + 1500, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "artificial_intelligence",
+            title = "AI Revolution",
+            description = "Artificial intelligence is transforming your society.",
+            category = EventCategory.SCIENTIFIC,
+            severity = EventSeverity.MODERATE,
+            effect = { stats -> stats.copy(technology = (stats.technology + 12).coerceAtMost(100), economy = (stats.economy + 5).coerceAtMost(100)) },
+            options = listOf(
+                EventOption("Embrace AI", "Lead the revolution") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 20, economy = stats.economy + 15, happiness = (stats.happiness - 5).coerceAtLeast(0)), treasury - 2500, resources)
+                },
+                EventOption("Regulate Heavily", "Protect jobs") { stats, treasury, resources ->
+                    Triple(stats.copy(technology = stats.technology + 5, happiness = stats.happiness + 10), treasury - 1000, resources)
+                },
+                EventOption("Ban AI", "Traditional approach") { stats, treasury, resources ->
+                    Triple(stats.copy(happiness = stats.happiness + 5, stability = stats.stability + 5), treasury, resources)
+                }
+            )
+        ),
+        GameEvent(
+            id = "civil_war",
+            title = "Civil War",
+            description = "The nation has split into factions at war!",
+            category = EventCategory.POLITICAL,
+            severity = EventSeverity.CATASTROPHIC,
+            effect = { stats -> stats.copy(population = (stats.population - 200000).coerceAtLeast(1), economy = (stats.economy - 30).coerceAtLeast(0), stability = 0) },
+            options = listOf(
+                EventOption("Win Civil War", "Unify the nation") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = 50, military = stats.military + 20, economy = stats.economy - 10), treasury - 8000, resources)
+                },
+                EventOption("Lose Power", "New government") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = 30, happiness = 40), treasury - 3000, resources)
+                },
+                EventOption("Fragment", "Break into states") { stats, treasury, resources ->
+                    Triple(stats.copy(stability = 20, economy = stats.economy - 20, population = (stats.population / 2)), treasury - 5000, resources)
+                }
+            )
+        )
+    )
+
+    // ========== 25+ NEW MAJOR GAMEPLAY FEATURES ==========
+
+    // 1. ELECTION SYSTEM
+    fun holdElection(country: Country, type: ElectionType): Country {
+        if (country.treasury < 5000) return country
+        val parties = country.politicalParties.map { it.name }
+        return country.copy(
+            treasury = country.treasury - 5000,
+            election = Election(
+                year = country.year,
+                isActive = true,
+                turnsRemaining = 2,
+                type = type,
+                campaignCost = 5000,
+                incumbentParty = parties.firstOrNull() ?: "Ruling Party",
+                challengerParties = parties.drop(1)
+            )
+        )
+    }
+
+    // 2. POLITICAL SCANDALS
+    fun triggerScandal(country: Country, type: ScandalType): Country {
+        if (country.treasury < type.cost) return country
+        val scandal = PoliticalScandal(
+            id = "scandal_${System.currentTimeMillis()}",
+            name = "${type.name} Scandal",
+            type = type,
+            severity = type.damage
+        )
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness - type.damage / 2).coerceAtLeast(0),
+                stability = (country.stats.stability - type.damage).coerceAtLeast(0)
+            )
+        )
+    }
+
+    fun resolveScandal(country: Country): Country {
+        return country.copy(
+            stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100))
+        )
+    }
+
+    // 3. TRADE AGREEMENTS
+    fun proposeTradeAgreement(country: Country, nationId: String, type: TradeAgreementType): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore < 50) return country
+        
+        val agreement = TradeAgreement(
+            id = "trade_${System.currentTimeMillis()}",
+            name = "${type.name} Agreement",
+            type = type,
+            memberIds = listOf("player", nationId),
+            yearSigned = country.year,
+            economyBonus = type.bonus
+        )
+        return country.copy(
+            stats = country.stats.copy(economy = (country.stats.economy + type.bonus).coerceAtMost(100))
+        )
+    }
+
+    // 4. TREATIES
+    fun signTreaty(country: Country, nationId: String, type: TreatyType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                military = (country.stats.military + type.defenseBonus).coerceAtMost(100),
+                stability = (country.stats.stability + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 5. WAR - BATTLES
+    fun resolveBattle(country: Country, enemyId: String, type: BattleType): Country {
+        val playerPower = country.stats.military
+        val enemyPower = 50 + (-20..20).random()
+        val roll = (1..100).random()
+        
+        val playerWins = when (type) {
+            BattleType.LAND -> roll + playerPower > 70
+            BattleType.NAVAL -> roll + playerPower > 75
+            BattleType.AIR -> roll + playerPower > 65
+            BattleType.GUERRILLA -> roll > 40
+            BattleType.SIEGE -> roll + playerPower > 80
+        }
+
+        return if (playerWins) {
+            country.copy(
+                stats = country.stats.copy(
+                    military = (country.stats.military + 3).coerceAtMost(100),
+                    stability = (country.stats.stability + 2).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    military = (country.stats.military - 5).coerceAtLeast(0),
+                    stability = (country.stats.stability - 5).coerceAtLeast(0)
+                )
+            )
+        }
+    }
+
+    // 6. REVOLUTION
+    fun startRevolution(country: Country): Country {
+        val revolutionary = RevolutionaryFaction(
+            name = "Revolutionaries",
+            type = RevolutionType.DEMOCRATIC,
+            strength = 30,
+            support = 20
+        )
+        return country.copy(
+            stats = country.stats.copy(
+                stability = (country.stats.stability - 30).coerceAtLeast(0),
+                happiness = (country.stats.happiness - 20).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 7. COUP
+    fun attemptCoup(country: Country): Country {
+        val stability = country.stats.stability
+        val militaryPower = country.stats.military
+        val successChance = ((100 - stability) + militaryPower) / 2
+        
+        val success = (1..100).random() < successChance
+        
+        return if (success) {
+            country.copy(
+                governmentType = GovernmentType.DICTATORSHIP,
+                stats = country.stats.copy(
+                    stability = 60,
+                    happiness = (country.stats.happiness - 20).coerceAtLeast(0),
+                    military = (country.stats.military + 15).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    stability = (country.stats.stability - 10).coerceAtLeast(0)
+                )
+            )
+        }
+    }
+
+    // 8. SUMMITS
+    fun hostSummit(country: Country, type: SummitType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + type.softPowerBonus).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 9. DIPLOMATIC INCIDENTS
+    fun resolveIncident(country: Country, nationId: String, type: IncidentType): Country {
+        if (country.treasury < type.cost) return country
+        
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(relationScore = (it.relationScore - type.relationPenalty).coerceAtLeast(0))
+            } else it
+        }
+        
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            diplomaticRelations = rels
+        )
+    }
+
+    // 10. TERRORISM
+    fun handleTerrorism(country: Country): Country {
+        if (country.stats.stability < 50 && (1..10).random() == 1) {
+            val attack = TerroristAttack(
+                id = "terror_${System.currentTimeMillis()}",
+                location = "Capital",
+                group = TerroristGroup.DOMESTIC,
+                casualties = (100..1000).random(),
+                damage = (500..3000).random(),
+                year = country.year,
+                threatLevel = 50
+            )
+            return country.copy(
+                stats = country.stats.copy(
+                    stability = (country.stats.stability - 15).coerceAtLeast(0),
+                    happiness = (country.stats.happiness - 10).coerceAtLeast(0)
+                )
+            )
+        }
+        return country
+    }
+
+    // Counter-terrorism funding
+    fun counterTerrorism(country: Country): Country {
+        if (country.treasury < 1500) return country
+        return country.copy(
+            treasury = country.treasury - 1500,
+            stats = country.stats.copy(
+                stability = (country.stats.stability + 8).coerceAtMost(100),
+                crime = (country.stats.crime - 5).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 11. REFUGEES
+    fun handleRefugees(country: Country, accept: Boolean): Country {
+        return if (accept) {
+            country.copy(
+                stats = country.stats.copy(
+                    population = country.stats.population + 5000,
+                    happiness = (country.stats.happiness - 3).coerceAtLeast(0),
+                    stability = (country.stats.stability + 3).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    softPower = (country.stats.softPower - 5).coerceAtLeast(0),
+                    stability = (country.stats.stability + 2).coerceAtMost(100)
+                )
+            )
+        }
+    }
+
+    // 12. PANDEMICS
+    fun outbreakPandemic(country: Country): Country {
+        val pandemic = Pandemic(
+            id = "pandemic_${System.currentTimeMillis()}",
+            name = "Global Flu",
+            type = PandemicType.INFLUENZA,
+            infected = country.stats.population / 10,
+            active = true,
+            turnStarted = country.turnCount
+        )
+        
+        val deaths = (country.stats.population * 0.01).toInt()
+        
+        return country.copy(
+            stats = country.stats.copy(
+                population = (country.stats.population - deaths).coerceAtLeast(1),
+                happiness = (country.stats.happiness - 15).coerceAtLeast(0),
+                healthcare = (country.stats.healthcare - 10).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 13. FAMINE
+    fun handleFamine(country: Country): Country {
+        if (country.resources.food < 20) {
+            val deaths = (country.stats.population * 0.02).toInt()
+            return country.copy(
+                stats = country.stats.copy(
+                    population = (country.stats.population - deaths).coerceAtLeast(1),
+                    happiness = (country.stats.happiness - 20).coerceAtLeast(0),
+                    stability = (country.stats.stability - 15).coerceAtLeast(0)
+                )
+            )
+        }
+        return country
+    }
+
+    // 14. NATURAL DISASTERS
+    fun disasterStrike(country: Country): Country {
+        if ((1..20).random() == 1) {
+            val disasterTypes = DisasterType.values()
+            val type = disasterTypes.random()
+            val magnitude = (5..10).random()
+            
+            return country.copy(
+                stats = country.stats.copy(
+                    economy = (country.stats.economy - magnitude * 2).coerceAtLeast(0),
+                    stability = (country.stats.stability - magnitude).coerceAtLeast(0),
+                    population = (country.stats.population - magnitude * 1000).coerceAtLeast(1)
+                ),
+                treasury = country.treasury - magnitude * 500
+            )
+        }
+        return country
+    }
+
+    // 15. ECONOMIC CRISIS
+    fun economicCrisis(country: Country): Country {
+        if (country.stats.economy > 80 && (1..15).random() == 1) {
+            return country.copy(
+                stats = country.stats.copy(
+                    economy = (country.stats.economy - 25).coerceAtLeast(0),
+                    happiness = (country.stats.happiness - 15).coerceAtLeast(0)
+                ),
+                treasury = (country.treasury * 0.7).toInt()
+            )
+        }
+        return country
+    }
+
+    fun stimulateEconomy(country: Country): Country {
+        if (country.treasury < 3000) return country
+        return country.copy(
+            treasury = country.treasury - 3000,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 15).coerceAtMost(100),
+                happiness = (country.stats.happiness + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 16. SPACE RACE
+    fun advanceSpaceProgram(country: Country): Country {
+        if (country.treasury < 5000) return country
+        
+        return country.copy(
+            treasury = country.treasury - 5000,
+            stats = country.stats.copy(
+                technology = (country.stats.technology + 12).coerceAtMost(100),
+                softPower = (country.stats.softPower + 8).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 17. NUCLEAR
+    fun buildNuclearWeapons(country: Country): Country {
+        if (country.treasury < 8000) return country
+        return country.copy(
+            treasury = country.treasury - 8000,
+            military = country.military.copy(
+                nuclearProgram = country.military.nuclearProgram.copy(
+                    warheads = country.military.nuclearProgram.warheads + 1
+                )
+            ),
+            stats = country.stats.copy(
+                military = (country.stats.military + 10).coerceAtMost(100),
+                softPower = (country.stats.softPower + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 18. INTELLIGENCE
+    fun improveIntelAgency(country: Country): Country {
+        if (country.treasury < 2000) return country
+        return country.copy(
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                security = (country.stats.security + 10).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 19. PROPAGANDA
+    fun runPropagandaCampaign(country: Country, type: PropagandaType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness + type.happinessChange).coerceIn(0, 100),
+                stability = (country.stats.stability + type.stabilityChange).coerceIn(0, 100),
+                propaganda = (country.stats.propaganda + 10).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 20. INFRASTRUCTURE PROJECTS
+    fun startInfrastructureProject(country: Country, type: ProjectType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 8).coerceAtMost(100),
+                stability = (country.stats.stability + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 21. SOCIAL REFORMS
+    fun proposeReform(country: Country, type: ReformType): Country {
+        if (country.treasury < type.cost) return country
+        
+        val passed = (1..100).random() < country.stats.stability
+        
+        return if (passed) {
+            country.copy(
+                treasury = country.treasury - type.cost,
+                stats = country.stats.copy(
+                    happiness = (country.stats.happiness + type.happinessBonus).coerceAtMost(100),
+                    economy = (country.stats.economy + type.economyPenalty).coerceAtLeast(0)
+                )
+            )
+        } else {
+            country.copy(treasury = country.treasury - type.cost / 2)
+        }
+    }
+
+    // 22. REGIONAL DEVELOPMENT
+    fun developRegion(country: Country): Country {
+        if (country.treasury < 1500) return country
+        return country.copy(
+            treasury = country.treasury - 1500,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 6).coerceAtMost(100),
+                population = country.stats.population + 5000
+            )
+        )
+    }
+
+    // 23. INTERNATIONAL ORGANIZATIONS
+    fun joinOrganization(country: Country, type: OrgType): Country {
+        if (country.treasury < type.membershipCost) return country
+        return country.copy(
+            treasury = country.treasury - type.membershipCost,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + type.benefits).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 24. CULTURAL INFLUENCE
+    fun promoteCulture(country: Country): Country {
+        if (country.treasury < 1200) return country
+        return country.copy(
+            treasury = country.treasury - 1200,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + 12).coerceAtMost(100),
+                happiness = (country.stats.happiness + 3).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 25. INTELLECTUAL PROPERTY
+    fun researchPatents(country: Country): Country {
+        if (country.treasury < 2000 || country.stats.technology < 30) return country
+        return country.copy(
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                technology = (country.stats.technology + 8).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 26. FOREIGN BASES
+    fun establishForeignBase(country: Country, nationId: String): Country {
+        if (country.treasury < 5000) return country
+        return country.copy(
+            treasury = country.treasury - 5000,
+            stats = country.stats.copy(
+                military = (country.stats.military + 8).coerceAtMost(100),
+                softPower = (country.stats.softPower + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 27. AMBASSADORS
+    fun appointAmbassador(country: Country, nationId: String): Country {
+        if (country.treasury < 2500) return country
+        
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(relationScore = (it.relationScore + 10).coerceAtMost(100))
+            } else it
+        }
+        
+        return country.copy(
+            treasury = country.treasury - 2500,
+            diplomaticRelations = rels
+        )
+    }
+
+    // 28. WAR DECLARATION - Enhanced
+    fun declareWarEnhanced(country: Country, nationId: String): Country {
+        val target = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        
+        val warInfo = WarInfo(
+            enemyNationId = nationId,
+            battleHistory = emptyList(),
+            occupationLevel = 0,
+            resistanceLevel = 30,
+            peaceTalks = false
+        )
+        
+        val newRels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(status = RelationStatus.ENEMY, isAtWar = true, relationScore = 0)
+            } else it
+        }
+        
+        return country.copy(
+            diplomaticRelations = newRels,
+            stats = country.stats.copy(
+                stability = (country.stats.stability - 20).coerceAtLeast(0),
+                military = (country.stats.military + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 29. PEACE TREATY
+    fun negotiatePeace(country: Country, nationId: String): Country {
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId && it.isAtWar) {
+                it.copy(status = RelationStatus.NEUTRAL, isAtWar = false, relationScore = 30)
+            } else it
+        }
+        
+        return country.copy(
+            diplomaticRelations = rels,
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                stability = (country.stats.stability + 15).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 30. MORALE BOOST
+    fun boostMorale(country: Country): Country {
+        if (country.treasury < 800) return country
+        return country.copy(
+            treasury = country.treasury - 800,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness + 8).coerceAtMost(100),
+                military = (country.stats.military + 5).coerceAtMost(100)
+            )
+        )
+    }
+}
