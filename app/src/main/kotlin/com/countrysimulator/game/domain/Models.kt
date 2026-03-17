@@ -392,6 +392,7 @@ enum class ElectionType(val years: Int) {
 }
 
 // 2. POLITICAL SCANDALS
+@Serializable
 enum class ScandalType(val damage: Int, val cost: Int) {
     CORRUPTION(20, 3000),
     SEXUAL(15, 2000),
@@ -401,6 +402,7 @@ enum class ScandalType(val damage: Int, val cost: Int) {
     PLAGIARISM(10, 1500)
 }
 
+@Serializable
 data class PoliticalScandal(
     val id: String,
     val name: String,
@@ -411,6 +413,7 @@ data class PoliticalScandal(
 )
 
 // 3. TRADE AGREEMENTS
+@Serializable
 enum class TradeAgreementType(val bonus: Int) {
     BILATERAL(10),
     MULTILATERAL(20),
@@ -418,6 +421,7 @@ enum class TradeAgreementType(val bonus: Int) {
     CUSTOMS_UNION(30)
 }
 
+@Serializable
 data class TradeAgreement(
     val id: String,
     val name: String,
@@ -429,6 +433,7 @@ data class TradeAgreement(
 )
 
 // 4. TREATIES & ALLIANCES
+@Serializable
 enum class TreatyType(val cost: Int, val defenseBonus: Int) {
     NON_AGGRESSION(1000, 5),
     MUTUAL_DEFENSE(3000, 20),
@@ -437,6 +442,7 @@ enum class TreatyType(val cost: Int, val defenseBonus: Int) {
     CULTURAL_EXCHANGE(800, 0)
 }
 
+@Serializable
 data class Treaty(
     val id: String,
     val name: String,
@@ -447,10 +453,12 @@ data class Treaty(
 )
 
 // 5. WAR & CONFLICT - Enhanced
+@Serializable
 enum class BattleType {
     LAND, NAVAL, AIR, GUERRILLA, SIEGE
 }
 
+@Serializable
 data class Battle(
     val id: String,
     val name: String,
@@ -463,6 +471,7 @@ data class Battle(
     val turn: Int = 0
 )
 
+@Serializable
 data class WarInfo(
     val enemyNationId: String,
     val battleHistory: List<Battle> = emptyList(),
@@ -472,6 +481,7 @@ data class WarInfo(
 )
 
 // 6. REVOLUTION SYSTEM
+@Serializable
 enum class RevolutionType {
     COMMUNIST,
     FASCIST,
@@ -480,6 +490,7 @@ enum class RevolutionType {
     DEMOCRATIC
 }
 
+@Serializable
 data class RevolutionaryFaction(
     val name: String,
     val type: RevolutionType,
@@ -489,6 +500,7 @@ data class RevolutionaryFaction(
 )
 
 // 7. COUP SYSTEM
+@Serializable
 enum class CoupType {
     MILITARY,
     PALACE,
@@ -496,6 +508,7 @@ enum class CoupType {
     FAILED
 }
 
+@Serializable
 data class CoupAttempt(
     val id: String,
     val year: Int,
@@ -506,6 +519,7 @@ data class CoupAttempt(
 )
 
 // 8. INTERNATIONAL SUMMITS
+@Serializable
 enum class SummitType(val softPowerBonus: Int, val cost: Int) {
     ECONOMIC(10, 5000),
     SECURITY(15, 6000),
@@ -514,6 +528,7 @@ enum class SummitType(val softPowerBonus: Int, val cost: Int) {
     PEACE(20, 8000)
 }
 
+@Serializable
 data class Summit(
     val id: String,
     val name: String,
@@ -525,6 +540,7 @@ data class Summit(
 )
 
 // 9. DIPLOMATIC INCIDENTS
+@Serializable
 enum class IncidentType(val relationPenalty: Int, val cost: Int) {
     BORDER_CLASH(15, 2000),
     ESPIONAGE_CAUGHT(20, 3000),
@@ -533,6 +549,7 @@ enum class IncidentType(val relationPenalty: Int, val cost: Int) {
     TERRITORIAL_CLAIM(25, 4000)
 }
 
+@Serializable
 data class DiplomaticIncident(
     val id: String,
     val type: IncidentType,
@@ -543,6 +560,7 @@ data class DiplomaticIncident(
 )
 
 // 10. TERRORISM
+@Serializable
 enum class TerroristGroup {
     DOMESTIC,
     FOREIGN,
@@ -550,6 +568,7 @@ enum class TerroristGroup {
     SEPARATIST
 }
 
+@Serializable
 data class TerroristAttack(
     val id: String,
     val location: String,
@@ -561,6 +580,7 @@ data class TerroristAttack(
 )
 
 // 11. REFUGEES
+@Serializable
 data class RefugeeCrisis(
     val id: String,
     val originNationId: String,
@@ -571,6 +591,7 @@ data class RefugeeCrisis(
 )
 
 // 12. PANDEMICS
+@Serializable
 enum class PandemicType(val deathRate: Double) {
     INFLUENZA(0.02),
     CORONAVIRUS(0.03),
@@ -579,6 +600,7 @@ enum class PandemicType(val deathRate: Double) {
     UNKNOWN(0.10)
 }
 
+@Serializable
 data class Pandemic(
     val id: String,
     val name: String,
@@ -590,6 +612,7 @@ data class Pandemic(
 )
 
 // 13. FAMINE
+@Serializable
 data class Famine(
     val id: String,
     val severity: Int,
@@ -599,6 +622,7 @@ data class Famine(
 )
 
 // 14. NATURAL DISASTERS
+@Serializable
 enum class DisasterType(val damageMultiplier: Double) {
     EARTHQUAKE(1.5),
     HURRICANE(1.2),
@@ -609,6 +633,7 @@ enum class DisasterType(val damageMultiplier: Double) {
     VOLCANO(2.0)
 }
 
+@Serializable
 data class NaturalDisaster(
     val id: String,
     val type: DisasterType,
@@ -620,6 +645,7 @@ data class NaturalDisaster(
 )
 
 // 15. ECONOMIC CRISIS
+@Serializable
 enum class CrisisType {
     RECESSION,
     DEPRESSION,
@@ -629,6 +655,7 @@ enum class CrisisType {
     BANKING_CRISIS
 }
 
+@Serializable
 data class EconomicCrisis(
     val id: String,
     val type: CrisisType,
@@ -638,6 +665,7 @@ data class EconomicCrisis(
 )
 
 // 16. SPACE RACE
+@Serializable
 enum class SpaceMilestone(val cost: Int, val techBonus: Int) {
     FIRST_SATELLITE(3000, 10),
     MANNED_SPACEFLIGHT(5000, 15),
@@ -646,6 +674,7 @@ enum class SpaceMilestone(val cost: Int, val techBonus: Int) {
     MARS_MISSION(30000, 50)
 }
 
+@Serializable
 data class SpaceProgram(
     val active: Boolean = false,
     val milestones: List<SpaceMilestone> = emptyList(),
@@ -654,6 +683,7 @@ data class SpaceProgram(
 )
 
 // 17. NUCLEAR PROLIFERATION
+@Serializable
 enum class NuclearStockpile(val warheads: Int, val cost: Int) {
     SINGLE_WARHEAD(1, 5000),
     SMALL(5, 15000),
@@ -662,6 +692,7 @@ enum class NuclearStockpile(val warheads: Int, val cost: Int) {
     SUPERPOWER(500, 300000)
 }
 
+@Serializable
 data class NuclearArsenal(
     val warheads: Int = 0,
     val missiles: Int = 0,
@@ -671,6 +702,7 @@ data class NuclearArsenal(
 )
 
 // 18. INTELLIGENCE OPERATIONS
+@Serializable
 enum class IntelOperation(val cost: Int, val risk: Int) {
     COUNTER_INTEL(2000, 10),
     HACK_INFRASTRUCTURE(3000, 20),
@@ -679,6 +711,7 @@ enum class IntelOperation(val cost: Int, val risk: Int) {
     TECH_STEALING(4000, 25)
 }
 
+@Serializable
 data class IntelAgency(
     val budget: Int = 1000,
     val agents: Int = 100,
@@ -687,6 +720,7 @@ data class IntelAgency(
 )
 
 // 19. PROPAGANDA CAMPAIGNS
+@Serializable
 enum class PropagandaType(val happinessChange: Int, val stabilityChange: Int, val cost: Int) {
     NATIONALISM(10, 15, 1000),
     FEAR(-5, 20, 800),
@@ -695,6 +729,7 @@ enum class PropagandaType(val happinessChange: Int, val stabilityChange: Int, va
     ENEMY(-10, 5, 900)
 }
 
+@Serializable
 data class PropagandaCampaign(
     val id: String,
     val type: PropagandaType,
@@ -703,6 +738,7 @@ data class PropagandaCampaign(
 )
 
 // 20. INFRASTRUCTURE PROJECTS
+@Serializable
 enum class ProjectType(val cost: Int, val duration: Int) {
     HIGHWAY(5000, 3),
     RAILWAY(7000, 4),
@@ -713,6 +749,7 @@ enum class ProjectType(val cost: Int, val duration: Int) {
     SPACE_CENTER(15000, 8)
 }
 
+@Serializable
 data class InfrastructureProject(
     val id: String,
     val name: String,
@@ -722,6 +759,7 @@ data class InfrastructureProject(
 )
 
 // 21. SOCIAL REFORMS
+@Serializable
 enum class ReformType(val happinessBonus: Int, val economyPenalty: Int, val cost: Int) {
     UNIVERSAL_HEALTHCARE(20, -5, 5000),
     UNIVERSAL_INCOME(25, -10, 8000),
@@ -730,6 +768,7 @@ enum class ReformType(val happinessBonus: Int, val economyPenalty: Int, val cost
     ENVIRONMENTAL_LAWS(10, -8, 3500)
 }
 
+@Serializable
 data class SocialReform(
     val id: String,
     val type: ReformType,
@@ -740,6 +779,7 @@ data class SocialReform(
 )
 
 // 22. REGIONAL DEVELOPMENT
+@Serializable
 enum class RegionType {
     URBAN,
     RURAL,
@@ -749,6 +789,7 @@ enum class RegionType {
     INDUSTRIAL
 }
 
+@Serializable
 data class Region(
     val id: String,
     val name: String,
@@ -759,6 +800,7 @@ data class Region(
 )
 
 // 23. INTERNATIONAL ORGANIZATIONS
+@Serializable
 enum class OrgType(val membershipCost: Int, val benefits: Int) {
     NATO(5000, 30),
     EU(4000, 25),
@@ -768,6 +810,7 @@ enum class OrgType(val membershipCost: Int, val benefits: Int) {
     AFRICAN_UNION(1500, 12)
 }
 
+@Serializable
 data class InternationalOrg(
     val id: String,
     val name: String,
@@ -778,6 +821,7 @@ data class InternationalOrg(
 )
 
 // 24. CULTURAL INFLUENCE
+@Serializable
 enum class CulturalExport {
     MUSIC,
     FILM,
@@ -787,6 +831,7 @@ enum class CulturalExport {
     FASHION
 }
 
+@Serializable
 data class CulturalInfluence(
     val exports: Map<CulturalExport, Int> = emptyMap(),
     val globalReach: Int = 0,
@@ -794,6 +839,7 @@ data class CulturalInfluence(
 )
 
 // 25. INTELLECTUAL PROPERTY
+@Serializable
 data class Patents(
     val count: Int = 0,
     val royalties: Int = 0,
@@ -801,6 +847,7 @@ data class Patents(
 )
 
 // 26. G20 / SUMMIT PARTICIPATION
+@Serializable
 data class GlobalSummit(
     val id: String,
     val name: String,
@@ -812,6 +859,7 @@ data class GlobalSummit(
 )
 
 // 27. MILITARY BASES ABROAD
+@Serializable
 data class ForeignBase(
     val id: String,
     val hostNationId: String,
@@ -821,6 +869,7 @@ data class ForeignBase(
 )
 
 // 28. AMBASSADORS
+@Serializable
 data class Ambassador(
     val id: String,
     val name: String,
