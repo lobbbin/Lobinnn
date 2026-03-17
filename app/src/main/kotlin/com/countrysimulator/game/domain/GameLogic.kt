@@ -151,12 +151,325 @@ object GameLogic {
         }
 
         val newMilitary = country.military.copy(warTheaters = country.military.warTheaters + newTheater)
-        
+
         return state.copy(country = country.copy(
             diplomaticRelations = newRelations,
             military = newMilitary,
             stats = country.stats.copy(stability = (country.stats.stability - 15).coerceAtLeast(0))
         ))
+    }
+
+    // Hoisted business logic functions from ViewModel
+    fun investInEconomy(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun recruitMilitary(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(military = (country.stats.military + 10).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun improveInfrastructure(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    fun investInTechnology(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 12).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun improveHappiness(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 10).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun investInEducation(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(education = (country.stats.education + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    fun investInHealthcare(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(healthcare = (country.stats.healthcare + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun improveEnvironment(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 10).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun fightCrime(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(crime = (country.stats.crime - 10).coerceAtLeast(0)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun buyFood(country: Country): Country {
+        if (country.treasury >= 500) {
+            return country.copy(
+                resources = country.resources.copy(food = (country.resources.food + 50).coerceAtMost(country.resources.maxFood)),
+                treasury = country.treasury - 500
+            )
+        }
+        return country
+    }
+
+    fun buyEnergy(country: Country): Country {
+        if (country.treasury >= 600) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 50).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 600
+            )
+        }
+        return country
+    }
+
+    fun buyMaterials(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                resources = country.resources.copy(materials = (country.resources.materials + 30).coerceAtMost(country.resources.maxMaterials)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    fun runPropaganda(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(
+                    propaganda = (country.stats.propaganda + 15).coerceAtMost(100),
+                    happiness = (country.stats.happiness + 5).coerceAtMost(100),
+                    stability = (country.stats.stability + 10).coerceAtMost(100)
+                ),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    fun improveRelations(country: Country, nationId: String): Country {
+        if (country.treasury >= 500) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(relationScore = (it.relationScore + 10).coerceAtMost(100)) else it
+            }
+            return country.copy(diplomaticRelations = rels, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun sendForeignAid(country: Country, nationId: String): Country {
+        if (country.treasury >= 2000) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(relationScore = (it.relationScore + 15).coerceAtMost(100)) else it
+            }
+            return country.copy(
+                diplomaticRelations = rels,
+                treasury = country.treasury - 2000,
+                stats = country.stats.copy(softPower = (country.stats.softPower + 5).coerceAtMost(100))
+            )
+        }
+        return country
+    }
+
+    fun offerTrade(country: Country, nationId: String): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore >= 40 && !relation.hasTradeAgreement) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(hasTradeAgreement = true) else it
+            }
+            return country.copy(diplomaticRelations = rels)
+        }
+        return country
+    }
+
+    fun formAlliance(country: Country, nationId: String): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore >= 80 && !relation.hasAlliance) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId) it.copy(hasAlliance = true, status = RelationStatus.ALLY) else it
+            }
+            return country.copy(diplomaticRelations = rels)
+        }
+        return country
+    }
+
+    fun imposeSanctions(country: Country, nationId: String, sanctionType: SanctionType): Country {
+        if (country.treasury >= 500) {
+            val rels = country.diplomaticRelations.map {
+                if (it.nationId == nationId && !it.sanctions.contains(sanctionType)) {
+                    it.copy(
+                        sanctions = it.sanctions + sanctionType,
+                        relationScore = (it.relationScore - 30).coerceAtLeast(0),
+                        status = if (it.relationScore - 30 < 20) RelationStatus.ENEMY else it.status
+                    )
+                } else it
+            }
+            return country.copy(diplomaticRelations = rels, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun launchSpyMission(country: Country, targetId: String, type: SpyMissionType, aiNations: List<AiNation>): Country {
+        if (country.treasury >= type.cost) {
+            val targetName = aiNations.find { it.id == targetId }?.name ?: "Unknown"
+            val mission = SpyMission(
+                "spy_${System.currentTimeMillis()}",
+                targetId,
+                targetName,
+                type,
+                (40..80).random(),
+                type.duration,
+                50
+            )
+            return country.copy(activeSpyMissions = country.activeSpyMissions + mission, treasury = country.treasury - type.cost)
+        }
+        return country
+    }
+
+    fun recruitTroops(country: Country, branch: String): Country {
+        if (country.treasury >= 500) {
+            val mil = country.military
+            val updated = when (branch) {
+                "Army" -> mil.copy(army = mil.army.copy(manpower = mil.army.manpower + 1000))
+                "Navy" -> mil.copy(navy = mil.navy.copy(manpower = mil.navy.manpower + 500))
+                else -> mil.copy(airForce = mil.airForce.copy(manpower = mil.airForce.manpower + 200))
+            }
+            return country.copy(military = updated, treasury = country.treasury - 500)
+        }
+        return country
+    }
+
+    fun upgradeEquipment(country: Country, branch: String): Country {
+        if (country.treasury >= 2000) {
+            val mil = country.military
+            val updated = when (branch) {
+                "Army" -> mil.copy(army = mil.army.copy(equipmentLevel = (mil.army.equipmentLevel + 1).coerceAtMost(10)))
+                "Navy" -> mil.copy(navy = mil.navy.copy(equipmentLevel = (mil.navy.equipmentLevel + 1).coerceAtMost(10)))
+                else -> mil.copy(airForce = mil.airForce.copy(equipmentLevel = (mil.airForce.equipmentLevel + 1).coerceAtMost(10)))
+            }
+            return country.copy(military = updated, treasury = country.treasury - 2000)
+        }
+        return country
+    }
+
+    fun startNuclearProgram(country: Country): Country {
+        if (country.treasury >= 10000 && !country.military.nuclearProgram.hasProgram) {
+            return country.copy(
+                military = country.military.copy(nuclearProgram = country.military.nuclearProgram.copy(hasProgram = true)),
+                treasury = country.treasury - 10000
+            )
+        }
+        return country
+    }
+
+    fun hireMercenaries(country: Country): Country {
+        if (country.treasury >= 1500) {
+            val mercGroup = MercenaryGroup(
+                "Mercs ${System.currentTimeMillis() % 100}",
+                (10..20).random(),
+                200,
+                10
+            )
+            return country.copy(
+                military = country.military.copy(mercenaries = country.military.mercenaries + mercGroup),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    fun changeDoctrine(country: Country, doc: MilitaryDoctrine): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(military = country.military.copy(doctrine = doc), treasury = country.treasury - 1000)
+        }
+        return country
+    }
+
+    fun toggleLaw(country: Country, id: String): Country {
+        val law = country.activeLaws.find { it.id == id } ?: return country
+        val cost = if (!law.isActive) law.cost else 0
+        if (country.treasury >= cost || law.isActive) {
+            return country.copy(
+                activeLaws = country.activeLaws.map { if (it.id == id) it.copy(isActive = !it.isActive) else it },
+                treasury = country.treasury - cost
+            )
+        }
+        return country
+    }
+
+    fun bribeFaction(country: Country, name: String): Country {
+        if (country.treasury >= 2000) {
+            return country.copy(
+                factions = country.factions.map { if (it.name == name) it.copy(loyalty = (it.loyalty + 20).coerceAtMost(100)) else it },
+                treasury = country.treasury - 2000
+            )
+        }
+        return country
+    }
+
+    fun hireMinister(country: Country, name: String, role: MinisterRole): Country {
+        if (country.treasury >= 3000) {
+            val newMinister = Minister("m_${System.currentTimeMillis()}", name, role, (40..80).random(), (0..20).random(), 100)
+            return country.copy(
+                ministers = country.ministers.filter { it.role != role } + newMinister,
+                treasury = country.treasury - 3000
+            )
+        }
+        return country
+    }
+
+    fun triggerElection(country: Country): Country {
+        if (country.election?.isActive != true) {
+            return country.copy(election = Election(year = country.year, isActive = true, turnsRemaining = 1))
+        }
+        return country
     }
 
     fun getGovernmentBonus(type: GovernmentType): (CountryStats) -> CountryStats {
@@ -907,7 +1220,7 @@ object GameLogic {
             description = "Your power grids are failing due to resource depletion.",
             category = EventCategory.ENVIRONMENTAL,
             severity = EventSeverity.MAJOR,
-            effect = { stats -> stats.copy(energy = (stats.technology - 5).coerceAtLeast(0), economy = (stats.economy - 10).coerceAtLeast(0), happiness = (stats.happiness - 5).coerceAtLeast(0)) },
+            effect = { stats -> stats.copy(technology = (stats.technology - 5).coerceAtLeast(0), economy = (stats.economy - 10).coerceAtLeast(0), happiness = (stats.happiness - 5).coerceAtLeast(0)) },
             options = listOf(
                 EventOption("Build Nuclear Plant", "Long-term solution") { stats, treasury, resources ->
                     Triple(stats.copy(technology = stats.technology + 10), treasury - 5000, resources.copy(energy = resources.maxEnergy, materials = (resources.materials - 30).coerceAtLeast(0)))
