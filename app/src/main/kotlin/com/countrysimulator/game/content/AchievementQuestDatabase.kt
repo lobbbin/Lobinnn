@@ -75,7 +75,10 @@ enum class RequirementType {
     SURVIVE_DISASTER,
     MAINTAIN_CONDITION,
     SPEEDRUN,
-    CHALLENGE
+    CHALLENGE,
+    COLLECT,
+    BUILD,
+    EVENT
 }
 
 @Serializable
@@ -106,7 +109,7 @@ data class QuestObjective(
 data class QuestReward(
     val type: RewardType,
     val stat: String,
-    val value: Any
+    val value: String
 )
 
 @Serializable
