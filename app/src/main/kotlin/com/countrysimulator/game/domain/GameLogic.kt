@@ -1684,4 +1684,531 @@ object GameLogic {
             )
         )
     )
+
+    // ========== 25+ NEW MAJOR GAMEPLAY FEATURES ==========
+
+    // 1. ELECTION SYSTEM
+    fun holdElection(country: Country, type: ElectionType): Country {
+        if (country.treasury < 5000) return country
+        val parties = country.politicalParties.map { it.name }
+        return country.copy(
+            treasury = country.treasury - 5000,
+            election = Election(
+                year = country.year,
+                isActive = true,
+                turnsRemaining = 2,
+                type = type,
+                campaignCost = 5000,
+                incumbentParty = parties.firstOrNull() ?: "Ruling Party",
+                challengerParties = parties.drop(1)
+            )
+        )
+    }
+
+    // 2. POLITICAL SCANDALS
+    fun triggerScandal(country: Country, type: ScandalType): Country {
+        if (country.treasury < type.cost) return country
+        val scandal = PoliticalScandal(
+            id = "scandal_${System.currentTimeMillis()}",
+            name = "${type.name} Scandal",
+            type = type,
+            severity = type.damage
+        )
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness - type.damage / 2).coerceAtLeast(0),
+                stability = (country.stats.stability - type.damage).coerceAtLeast(0)
+            )
+        )
+    }
+
+    fun resolveScandal(country: Country): Country {
+        return country.copy(
+            stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100))
+        )
+    }
+
+    // 3. TRADE AGREEMENTS
+    fun proposeTradeAgreement(country: Country, nationId: String, type: TradeAgreementType): Country {
+        val relation = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        if (relation.relationScore < 50) return country
+        
+        val agreement = TradeAgreement(
+            id = "trade_${System.currentTimeMillis()}",
+            name = "${type.name} Agreement",
+            type = type,
+            memberIds = listOf("player", nationId),
+            yearSigned = country.year,
+            economyBonus = type.bonus
+        )
+        return country.copy(
+            stats = country.stats.copy(economy = (country.stats.economy + type.bonus).coerceAtMost(100))
+        )
+    }
+
+    // 4. TREATIES
+    fun signTreaty(country: Country, nationId: String, type: TreatyType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                military = (country.stats.military + type.defenseBonus).coerceAtMost(100),
+                stability = (country.stats.stability + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 5. WAR - BATTLES
+    fun resolveBattle(country: Country, enemyId: String, type: BattleType): Country {
+        val playerPower = country.stats.military
+        val enemyPower = 50 + (-20..20).random()
+        val roll = (1..100).random()
+        
+        val playerWins = when (type) {
+            BattleType.LAND -> roll + playerPower > 70
+            BattleType.NAVAL -> roll + playerPower > 75
+            BattleType.AIR -> roll + playerPower > 65
+            BattleType.GUERRILLA -> roll > 40
+            BattleType.SIEGE -> roll + playerPower > 80
+        }
+
+        return if (playerWins) {
+            country.copy(
+                stats = country.stats.copy(
+                    military = (country.stats.military + 3).coerceAtMost(100),
+                    stability = (country.stats.stability + 2).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    military = (country.stats.military - 5).coerceAtLeast(0),
+                    stability = (country.stats.stability - 5).coerceAtLeast(0)
+                )
+            )
+        }
+    }
+
+    // 6. REVOLUTION
+    fun startRevolution(country: Country): Country {
+        val revolutionary = RevolutionaryFaction(
+            name = "Revolutionaries",
+            type = RevolutionType.DEMOCRATIC,
+            strength = 30,
+            support = 20
+        )
+        return country.copy(
+            stats = country.stats.copy(
+                stability = (country.stats.stability - 30).coerceAtLeast(0),
+                happiness = (country.stats.happiness - 20).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 7. COUP
+    fun attemptCoup(country: Country): Country {
+        val stability = country.stats.stability
+        val militaryPower = country.stats.military
+        val successChance = ((100 - stability) + militaryPower) / 2
+        
+        val success = (1..100).random() < successChance
+        
+        return if (success) {
+            country.copy(
+                governmentType = GovernmentType.DICTATORSHIP,
+                stats = country.stats.copy(
+                    stability = 60,
+                    happiness = (country.stats.happiness - 20).coerceAtLeast(0),
+                    military = (country.stats.military + 15).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    stability = (country.stats.stability - 10).coerceAtLeast(0)
+                )
+            )
+        }
+    }
+
+    // 8. SUMMITS
+    fun hostSummit(country: Country, type: SummitType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + type.softPowerBonus).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 9. DIPLOMATIC INCIDENTS
+    fun resolveIncident(country: Country, nationId: String, type: IncidentType): Country {
+        if (country.treasury < type.cost) return country
+        
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(relationScore = (it.relationScore - type.relationPenalty).coerceAtLeast(0))
+            } else it
+        }
+        
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            diplomaticRelations = rels
+        )
+    }
+
+    // 10. TERRORISM
+    fun handleTerrorism(country: Country): Country {
+        if (country.stats.stability < 50 && (1..10).random() == 1) {
+            val attack = TerroristAttack(
+                id = "terror_${System.currentTimeMillis()}",
+                location = "Capital",
+                group = TerroristGroup.DOMESTIC,
+                casualties = (100..1000).random(),
+                damage = (500..3000).random(),
+                year = country.year,
+                threatLevel = 50
+            )
+            return country.copy(
+                stats = country.stats.copy(
+                    stability = (country.stats.stability - 15).coerceAtLeast(0),
+                    happiness = (country.stats.happiness - 10).coerceAtLeast(0)
+                )
+            )
+        }
+        return country
+    }
+
+    // Counter-terrorism funding
+    fun counterTerrorism(country: Country): Country {
+        if (country.treasury < 1500) return country
+        return country.copy(
+            treasury = country.treasury - 1500,
+            stats = country.stats.copy(
+                stability = (country.stats.stability + 8).coerceAtMost(100),
+                crime = (country.stats.crime - 5).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 11. REFUGEES
+    fun handleRefugees(country: Country, accept: Boolean): Country {
+        return if (accept) {
+            country.copy(
+                stats = country.stats.copy(
+                    population = country.stats.population + 5000,
+                    happiness = (country.stats.happiness - 3).coerceAtLeast(0),
+                    stability = (country.stats.stability + 3).coerceAtMost(100)
+                )
+            )
+        } else {
+            country.copy(
+                stats = country.stats.copy(
+                    softPower = (country.stats.softPower - 5).coerceAtLeast(0),
+                    stability = (country.stats.stability + 2).coerceAtMost(100)
+                )
+            )
+        }
+    }
+
+    // 12. PANDEMICS
+    fun outbreakPandemic(country: Country): Country {
+        val pandemic = Pandemic(
+            id = "pandemic_${System.currentTimeMillis()}",
+            name = "Global Flu",
+            type = PandemicType.INFLUENZA,
+            infected = country.stats.population / 10,
+            active = true,
+            turnStarted = country.turnCount
+        )
+        
+        val deaths = (country.stats.population * 0.01).toInt()
+        
+        return country.copy(
+            stats = country.stats.copy(
+                population = (country.stats.population - deaths).coerceAtLeast(1),
+                happiness = (country.stats.happiness - 15).coerceAtLeast(0),
+                healthcare = (country.stats.healthcare - 10).coerceAtLeast(0)
+            )
+        )
+    }
+
+    // 13. FAMINE
+    fun handleFamine(country: Country): Country {
+        if (country.resources.food < 20) {
+            val deaths = (country.stats.population * 0.02).toInt()
+            return country.copy(
+                stats = country.stats.copy(
+                    population = (country.stats.population - deaths).coerceAtLeast(1),
+                    happiness = (country.stats.happiness - 20).coerceAtLeast(0),
+                    stability = (country.stats.stability - 15).coerceAtLeast(0)
+                )
+            )
+        }
+        return country
+    }
+
+    // 14. NATURAL DISASTERS
+    fun disasterStrike(country: Country): Country {
+        if ((1..20).random() == 1) {
+            val disasterTypes = DisasterType.values()
+            val type = disasterTypes.random()
+            val magnitude = (5..10).random()
+            
+            return country.copy(
+                stats = country.stats.copy(
+                    economy = (country.stats.economy - magnitude * 2).coerceAtLeast(0),
+                    stability = (country.stats.stability - magnitude).coerceAtLeast(0),
+                    population = (country.stats.population - magnitude * 1000).coerceAtLeast(1)
+                ),
+                treasury = country.treasury - magnitude * 500
+            )
+        }
+        return country
+    }
+
+    // 15. ECONOMIC CRISIS
+    fun economicCrisis(country: Country): Country {
+        if (country.stats.economy > 80 && (1..15).random() == 1) {
+            return country.copy(
+                stats = country.stats.copy(
+                    economy = (country.stats.economy - 25).coerceAtLeast(0),
+                    happiness = (country.stats.happiness - 15).coerceAtLeast(0)
+                ),
+                treasury = (country.treasury * 0.7).toInt()
+            )
+        }
+        return country
+    }
+
+    fun stimulateEconomy(country: Country): Country {
+        if (country.treasury < 3000) return country
+        return country.copy(
+            treasury = country.treasury - 3000,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 15).coerceAtMost(100),
+                happiness = (country.stats.happiness + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 16. SPACE RACE
+    fun advanceSpaceProgram(country: Country): Country {
+        if (country.treasury < 5000) return country
+        
+        return country.copy(
+            treasury = country.treasury - 5000,
+            stats = country.stats.copy(
+                technology = (country.stats.technology + 12).coerceAtMost(100),
+                softPower = (country.stats.softPower + 8).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 17. NUCLEAR
+    fun buildNuclearWeapons(country: Country): Country {
+        if (country.treasury < 8000) return country
+        return country.copy(
+            treasury = country.treasury - 8000,
+            military = country.military.copy(
+                nuclearProgram = country.military.nuclearProgram.copy(
+                    warheads = country.military.nuclearProgram.warheads + 1
+                )
+            ),
+            stats = country.stats.copy(
+                military = (country.stats.military + 10).coerceAtMost(100),
+                softPower = (country.stats.softPower + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 18. INTELLIGENCE
+    fun improveIntelAgency(country: Country): Country {
+        if (country.treasury < 2000) return country
+        return country.copy(
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                security = (country.stats.security + 10).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 19. PROPAGANDA
+    fun runPropagandaCampaign(country: Country, type: PropagandaType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness + type.happinessChange).coerceIn(0, 100),
+                stability = (country.stats.stability + type.stabilityChange).coerceIn(0, 100),
+                propaganda = (country.stats.propaganda + 10).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 20. INFRASTRUCTURE PROJECTS
+    fun startInfrastructureProject(country: Country, type: ProjectType): Country {
+        if (country.treasury < type.cost) return country
+        return country.copy(
+            treasury = country.treasury - type.cost,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 8).coerceAtMost(100),
+                stability = (country.stats.stability + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 21. SOCIAL REFORMS
+    fun proposeReform(country: Country, type: ReformType): Country {
+        if (country.treasury < type.cost) return country
+        
+        val passed = (1..100).random() < country.stats.stability
+        
+        return if (passed) {
+            country.copy(
+                treasury = country.treasury - type.cost,
+                stats = country.stats.copy(
+                    happiness = (country.stats.happiness + type.happinessBonus).coerceAtMost(100),
+                    economy = (country.stats.economy + type.economyPenalty).coerceAtLeast(0)
+                )
+            )
+        } else {
+            country.copy(treasury = country.treasury - type.cost / 2)
+        }
+    }
+
+    // 22. REGIONAL DEVELOPMENT
+    fun developRegion(country: Country): Country {
+        if (country.treasury < 1500) return country
+        return country.copy(
+            treasury = country.treasury - 1500,
+            stats = country.stats.copy(
+                economy = (country.stats.economy + 6).coerceAtMost(100),
+                population = country.stats.population + 5000
+            )
+        )
+    }
+
+    // 23. INTERNATIONAL ORGANIZATIONS
+    fun joinOrganization(country: Country, type: OrgType): Country {
+        if (country.treasury < type.membershipCost) return country
+        return country.copy(
+            treasury = country.treasury - type.membershipCost,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + type.benefits).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 24. CULTURAL INFLUENCE
+    fun promoteCulture(country: Country): Country {
+        if (country.treasury < 1200) return country
+        return country.copy(
+            treasury = country.treasury - 1200,
+            stats = country.stats.copy(
+                softPower = (country.stats.softPower + 12).coerceAtMost(100),
+                happiness = (country.stats.happiness + 3).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 25. INTELLECTUAL PROPERTY
+    fun researchPatents(country: Country): Country {
+        if (country.treasury < 2000 || country.stats.technology < 30) return country
+        return country.copy(
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                technology = (country.stats.technology + 8).coerceAtMost(100),
+                economy = (country.stats.economy + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 26. FOREIGN BASES
+    fun establishForeignBase(country: Country, nationId: String): Country {
+        if (country.treasury < 5000) return country
+        return country.copy(
+            treasury = country.treasury - 5000,
+            stats = country.stats.copy(
+                military = (country.stats.military + 8).coerceAtMost(100),
+                softPower = (country.stats.softPower + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 27. AMBASSADORS
+    fun appointAmbassador(country: Country, nationId: String): Country {
+        if (country.treasury < 2500) return country
+        
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(relationScore = (it.relationScore + 10).coerceAtMost(100))
+            } else it
+        }
+        
+        return country.copy(
+            treasury = country.treasury - 2500,
+            diplomaticRelations = rels
+        )
+    }
+
+    // 28. WAR DECLARATION - Enhanced
+    fun declareWarEnhanced(country: Country, nationId: String): Country {
+        val target = country.diplomaticRelations.find { it.nationId == nationId } ?: return country
+        
+        val warInfo = WarInfo(
+            enemyNationId = nationId,
+            battleHistory = emptyList(),
+            occupationLevel = 0,
+            resistanceLevel = 30,
+            peaceTalks = false
+        )
+        
+        val newRels = country.diplomaticRelations.map {
+            if (it.nationId == nationId) {
+                it.copy(status = RelationStatus.ENEMY, isAtWar = true, relationScore = 0)
+            } else it
+        }
+        
+        return country.copy(
+            diplomaticRelations = newRels,
+            stats = country.stats.copy(
+                stability = (country.stats.stability - 20).coerceAtLeast(0),
+                military = (country.stats.military + 5).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 29. PEACE TREATY
+    fun negotiatePeace(country: Country, nationId: String): Country {
+        val rels = country.diplomaticRelations.map {
+            if (it.nationId == nationId && it.isAtWar) {
+                it.copy(status = RelationStatus.NEUTRAL, isAtWar = false, relationScore = 30)
+            } else it
+        }
+        
+        return country.copy(
+            diplomaticRelations = rels,
+            treasury = country.treasury - 2000,
+            stats = country.stats.copy(
+                stability = (country.stats.stability + 15).coerceAtMost(100)
+            )
+        )
+    }
+
+    // 30. MORALE BOOST
+    fun boostMorale(country: Country): Country {
+        if (country.treasury < 800) return country
+        return country.copy(
+            treasury = country.treasury - 800,
+            stats = country.stats.copy(
+                happiness = (country.stats.happiness + 8).coerceAtMost(100),
+                military = (country.stats.military + 5).coerceAtMost(100)
+            )
+        )
+    }
 }

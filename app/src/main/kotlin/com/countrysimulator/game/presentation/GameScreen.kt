@@ -115,6 +115,12 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                                 selected = currentScreen == Screen.ACTIONS,
                                 onClick = { currentScreen = Screen.ACTIONS }
                             )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Public, "Affairs") },
+                                label = { Text("Affairs") },
+                                selected = currentScreen == Screen.AFFAIRS,
+                                onClick = { currentScreen = Screen.AFFAIRS }
+                            )
                         }
                     }
                 ) { padding ->
@@ -128,6 +134,7 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                             Screen.UN -> UnitedNationsScreen(gameState)
                             Screen.MARKET -> MarketScreen(gameState, viewModel)
                             Screen.ACTIONS -> ActionsScreen(gameState, viewModel)
+                            Screen.AFFAIRS -> AffairsScreen(gameState, viewModel)
                         }
 
                         // Floating Sub-menu for More
@@ -157,7 +164,7 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
     }
 }
 
-enum class Screen { DASHBOARD, POLITICS, MILITARY, INTEL, WORLD, UN, MARKET, ACTIONS }
+enum class Screen { DASHBOARD, POLITICS, MILITARY, INTEL, WORLD, UN, MARKET, ACTIONS, AFFAIRS }
 enum class DiplomacyAction { IMPROVE, TRADE, ALLIANCE, WAR, AID, SANCTION }
 
 @Composable
@@ -670,6 +677,202 @@ fun WorldScreen(gameState: GameState, viewModel: GameViewModel) {
                                 ) {
                                     Text("WAR", fontSize = 11.sp)
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AffairsScreen(gameState: GameState, viewModel: GameViewModel) {
+    val country = gameState.country
+    val treasury = country.treasury
+    
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            Text("World Affairs & Crises", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text("Handle events, disasters, and global affairs", fontSize = 14.sp, color = Color.Gray)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // CRISIS MANAGEMENT SECTION
+        item {
+            Text("Crisis Management", fontWeight = FontWeight.Bold, color = Color.Red)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Counter Terror ($1.5K)", { viewModel.counterTerrorism() }, treasury >= 1500, Modifier.weight(1f))
+                ActionButtonSmall("Stimulate Econ ($3K)", { viewModel.stimulateEconomy() }, treasury >= 3000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Refugees Accept", { viewModel.handleRefugees(true) }, treasury >= 500, Modifier.weight(1f))
+                ActionButtonSmall("Refugees Reject", { viewModel.handleRefugees(false) }, treasury >= 200, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // INTERNATIONAL RELATIONS
+        item {
+            Text("International Relations", fontWeight = FontWeight.Bold, color = Color(0xFF2196F3))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Host Summit ($5K)", { viewModel.hostSummit(SummitType.ECONOMIC) }, treasury >= 5000, Modifier.weight(1f))
+                ActionButtonSmall("Join NATO ($5K)", { viewModel.joinOrganization(OrgType.NATO) }, treasury >= 5000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Join EU ($4K)", { viewModel.joinOrganization(OrgType.EU) }, treasury >= 4000, Modifier.weight(1f))
+                ActionButtonSmall("Promote Culture ($1.2K)", { viewModel.promoteCulture() }, treasury >= 1200, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // SPACE & TECHNOLOGY
+        item {
+            Text("Space & Technology", fontWeight = FontWeight.Bold, color = Color(0xFF9C27B0))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Space Program ($5K)", { viewModel.advanceSpaceProgram() }, treasury >= 5000, Modifier.weight(1f))
+                ActionButtonSmall("Nuclear Weapons ($8K)", { viewModel.buildNuclearWeapons() }, treasury >= 8000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Intel Agency ($2K)", { viewModel.improveIntelAgency() }, treasury >= 2000, Modifier.weight(1f))
+                ActionButtonSmall("Research Patents ($2K)", { viewModel.researchPatents() }, treasury >= 2000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // SOCIAL REFORMS
+        item {
+            Text("Social Reforms", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Universal HC ($5K)", { viewModel.proposeReform(ReformType.UNIVERSAL_HEALTHCARE) }, treasury >= 5000, Modifier.weight(1f))
+                ActionButtonSmall("Universal Income ($8K)", { viewModel.proposeReform(ReformType.UNIVERSAL_INCOME) }, treasury >= 8000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Workers Rights ($3K)", { viewModel.proposeReform(ReformType.WORKERS_RIGHTS) }, treasury >= 3000, Modifier.weight(1f))
+                ActionButtonSmall("Civil Rights ($4K)", { viewModel.proposeReform(ReformType.CIVIL_RIGHTS) }, treasury >= 4000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // INFRASTRUCTURE
+        item {
+            Text("Infrastructure Projects", fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Highway ($5K)", { viewModel.startInfrastructureProject(ProjectType.HIGHWAY) }, treasury >= 5000, Modifier.weight(1f))
+                ActionButtonSmall("Railway ($7K)", { viewModel.startInfrastructureProject(ProjectType.RAILWAY) }, treasury >= 7000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Airport ($4K)", { viewModel.startInfrastructureProject(ProjectType.AIRPORT) }, treasury >= 4000, Modifier.weight(1f))
+                ActionButtonSmall("Space Center ($15K)", { viewModel.startInfrastructureProject(ProjectType.SPACE_CENTER) }, treasury >= 15000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // PROPAGANDA
+        item {
+            Text("Propaganda Campaigns", fontWeight = FontWeight.Bold, color = Color(0xFFE91E63))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Nationalism ($1K)", { viewModel.runPropagandaCampaign(PropagandaType.NATIONALISM) }, treasury >= 1000, Modifier.weight(1f))
+                ActionButtonSmall("Unity ($1.2K)", { viewModel.runPropagandaCampaign(PropagandaType.UNITY) }, treasury >= 1200, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Fear ($800)", { viewModel.runPropagandaCampaign(PropagandaType.FEAR) }, treasury >= 800, Modifier.weight(1f))
+                ActionButtonSmall("Glory ($1.5K)", { viewModel.runPropagandaCampaign(PropagandaType.GLORY) }, treasury >= 1500, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // POLITICAL ACTIONS
+        item {
+            Text("Political Actions", fontWeight = FontWeight.Bold, color = Color(0xFF607D8B))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Hold Election ($5K)", { viewModel.holdElection(ElectionType.GENERAL) }, treasury >= 5000, Modifier.weight(1f))
+                ActionButtonSmall("Attempt Coup", { viewModel.attemptCoup() }, treasury >= 1000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActionButtonSmall("Boost Morale ($800)", { viewModel.boostMorale() }, treasury >= 800, Modifier.weight(1f))
+                ActionButtonSmall("Start Revolution", { viewModel.startRevolution() }, treasury >= 2000, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            ActionButtonSmall("Scandal (Corrupt) ($3K)", { viewModel.triggerScandal(ScandalType.CORRUPTION) }, treasury >= 3000, Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // DIPLOMATIC ACTIONS
+        item {
+            Text("Diplomatic Actions", fontWeight = FontWeight.Bold, color = Color(0xFF00BCD4))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        gameState.aiNations.filter { it.isAlive }.take(4).forEach { ai ->
+            item {
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(ai.name, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            ActionButtonSmall("Ambassador ($2.5K)", { viewModel.appointAmbassador(ai.id) }, treasury >= 2500, Modifier.weight(1f))
+                            ActionButtonSmall("Foreign Base ($5K)", { viewModel.establishForeignBase(ai.id) }, treasury >= 5000, Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        // WAR ACTIONS
+        item {
+            Text("War & Peace", fontWeight = FontWeight.Bold, color = Color.Red)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        val atWarRelations = country.diplomaticRelations.filter { it.isAtWar }
+        if (atWarRelations.isEmpty()) {
+            item {
+                Text("No active wars", fontSize = 12.sp, color = Color.Gray)
+            }
+        } else {
+            atWarRelations.forEach { rel ->
+                item {
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color(0x33FF0000))) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text("⚠ WAR: ${rel.nationName}", fontWeight = FontWeight.Bold, color = Color.Red)
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                ActionButtonSmall("Battle (Land)", { viewModel.resolveBattle(rel.nationId, BattleType.LAND) }, treasury >= 500, Modifier.weight(1f))
+                                ActionButtonSmall("Peace Treaty ($2K)", { viewModel.negotiatePeace(rel.nationId) }, treasury >= 2000, Modifier.weight(1f))
                             }
                         }
                     }

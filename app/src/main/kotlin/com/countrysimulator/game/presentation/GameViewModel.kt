@@ -186,6 +186,41 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun upgradeFisheries() = updateCountry { GameLogic.upgradeFisheries(it) }
     fun upgradeForeignAid() = updateCountry { GameLogic.upgradeForeignAid(it) }
 
+    // ========== 25+ NEW MAJOR GAMEPLAY FEATURES ==========
+    fun holdElection(type: ElectionType) = updateCountry { GameLogic.holdElection(it, type) }
+    fun triggerScandal(type: ScandalType) = updateCountry { GameLogic.triggerScandal(it, type) }
+    fun resolveScandal() = updateCountry { GameLogic.resolveScandal(it) }
+    fun proposeTradeAgreement(nationId: String, type: TradeAgreementType) = updateCountry { GameLogic.proposeTradeAgreement(it, nationId, type) }
+    fun signTreaty(nationId: String, type: TreatyType) = updateCountry { GameLogic.signTreaty(it, nationId, type) }
+    fun resolveBattle(enemyId: String, type: BattleType) = updateCountry { GameLogic.resolveBattle(it, enemyId, type) }
+    fun startRevolution() = updateCountry { GameLogic.startRevolution(it) }
+    fun attemptCoup() = updateCountry { GameLogic.attemptCoup(it) }
+    fun hostSummit(type: SummitType) = updateCountry { GameLogic.hostSummit(it, type) }
+    fun resolveIncident(nationId: String, type: IncidentType) = updateCountry { GameLogic.resolveIncident(it, nationId, type) }
+    fun handleTerrorism() = updateCountry { GameLogic.handleTerrorism(it) }
+    fun counterTerrorism() = updateCountry { GameLogic.counterTerrorism(it) }
+    fun handleRefugees(accept: Boolean) = updateCountry { GameLogic.handleRefugees(it, accept) }
+    fun outbreakPandemic() = updateCountry { GameLogic.outbreakPandemic(it) }
+    fun handleFamine() = updateCountry { GameLogic.handleFamine(it) }
+    fun disasterStrike() = updateCountry { GameLogic.disasterStrike(it) }
+    fun economicCrisis() = updateCountry { GameLogic.economicCrisis(it) }
+    fun stimulateEconomy() = updateCountry { GameLogic.stimulateEconomy(it) }
+    fun advanceSpaceProgram() = updateCountry { GameLogic.advanceSpaceProgram(it) }
+    fun buildNuclearWeapons() = updateCountry { GameLogic.buildNuclearWeapons(it) }
+    fun improveIntelAgency() = updateCountry { GameLogic.improveIntelAgency(it) }
+    fun runPropagandaCampaign(type: PropagandaType) = updateCountry { GameLogic.runPropagandaCampaign(it, type) }
+    fun startInfrastructureProject(type: ProjectType) = updateCountry { GameLogic.startInfrastructureProject(it, type) }
+    fun proposeReform(type: ReformType) = updateCountry { GameLogic.proposeReform(it, type) }
+    fun developRegion() = updateCountry { GameLogic.developRegion(it) }
+    fun joinOrganization(type: OrgType) = updateCountry { GameLogic.joinOrganization(it, type) }
+    fun promoteCulture() = updateCountry { GameLogic.promoteCulture(it) }
+    fun researchPatents() = updateCountry { GameLogic.researchPatents(it) }
+    fun establishForeignBase(nationId: String) = updateCountry { GameLogic.establishForeignBase(it, nationId) }
+    fun appointAmbassador(nationId: String) = updateCountry { GameLogic.appointAmbassador(it, nationId) }
+    fun declareWarEnhanced(nationId: String) = updateCountry { GameLogic.declareWarEnhanced(it, nationId) }
+    fun negotiatePeace(nationId: String) = updateCountry { GameLogic.negotiatePeace(it, nationId) }
+    fun boostMorale() = updateCountry { GameLogic.boostMorale(it) }
+
     fun restartGame() {
         viewModelScope.launch {
             repository.clearGame()
