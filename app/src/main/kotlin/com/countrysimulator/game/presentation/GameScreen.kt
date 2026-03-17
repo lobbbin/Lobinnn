@@ -74,6 +74,8 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                     message = viewModel.getGameOverMessage(gameState.gameOverReason!!),
                     onRestart = { viewModel.restartGame() }
                 )
+            } else if (gameState.textAdventureState.isActive) {
+                TextAdventureScreen(gameState, viewModel)
             } else {
                 Scaffold(
                     topBar = {
@@ -249,6 +251,16 @@ fun DashboardScreen(gameState: GameState, incomeThisTurn: Int, newsHeadline: Str
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ActionButtonSmall("Happiness ($800)", { viewModel.improveHappiness() }, country.treasury >= 800, Modifier.weight(1f))
             ActionButtonSmall("Propaganda ($1K)", { viewModel.runPropaganda() }, country.treasury >= 1000, Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = { viewModel.startTextAdventure() },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF000000))
+        ) {
+            Text("▶ START 300 FEATURES EXTREME TEXT MODE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00FF00))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1314,5 +1326,110 @@ fun formatNumber(number: Int): String {
         number >= 1000000 -> String.format("%.1fM", number / 1000000.0)
         number >= 1000 -> String.format("%.1fK", number / 1000.0)
         else -> number.toString()
+    }
+}
+
+// -----------------------------------------------------------------------------------------
+// EXTREME TEXT-BASED ADVENTURE UI
+// -----------------------------------------------------------------------------------------
+
+@Composable
+fun TextAdventureScreen(gameState: GameState, viewModel: GameViewModel) {
+    val advState = gameState.textAdventureState
+    val currentNodeId = advState.currentFeatureNodeId
+    
+    val node = remember(currentNodeId) {
+        if (currentNodeId != null) {
+            val idx = currentNodeId.removePrefix("feature_").toIntOrNull() ?: 0
+            com.countrysimulator.game.content.EventDatabase.getFeatureNode(idx)
+        } else null
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Terminal-like background
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            drawRect(color = Color(0xFF0A0A0A))
+        }
+        
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+            
+            // Header
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("COUNTRY SIMULATOR OS v3.0 // TEXT MODE", color = Color(0xFF00FF00), fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                TextButton(onClick = { viewModel.quitTextAdventure() }) {
+                    Text("[ EXIT ]", color = Color.Red, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                }
+            }
+            Divider(color = Color(0xFF00FF00), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Output log
+            if (advState.historyLog.isNotEmpty()) {
+                val logText = advState.historyLog.takeLast(7).joinToString("\n\n")
+                Text(
+                    text = logText,
+                    color = Color(0xFF00CC00),
+                    fontSize = 13.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(color = Color(0xFF005500), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // Current Scenario
+            if (node != null) {
+                Text(
+                    text = "> ${node.title}",
+                    color = Color(0xFFFFFFFF),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = node.description,
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 14.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    lineHeight = 20.sp
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Options
+                Text("AWAITING YOUR COMMAND:", color = Color(0xFF00FF00), fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                node.options.forEachIndexed { index, option ->
+                    Button(
+                        onClick = { viewModel.handleTextAdventureOption(index) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF111111)),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                            Text("[${index + 1}] ", color = Color(0xFF00FF00), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                            Text(option.label, color = Color.White, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = ">>> ALL 300 FEATURES HAVE BEEN PROCESSED.\n>>> RETURNING TO MAIN MENU...",
+                    color = Color(0xFF00FF00),
+                    fontSize = 16.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.quitTextAdventure() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF111111))
+                ) {
+                    Text("[ RETURN ]", color = Color(0xFF00FF00), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                }
+            }
+        }
     }
 }
