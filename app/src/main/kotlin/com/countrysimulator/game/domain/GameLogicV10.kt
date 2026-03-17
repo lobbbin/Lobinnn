@@ -2,6 +2,16 @@ package com.countrysimulator.game.domain
 
 import kotlin.random.Random
 
+// Explicit imports for CrisisType enum values
+import com.countrysimulator.game.domain.CrisisType.BANK_RUN
+import com.countrysimulator.game.domain.CrisisType.STOCK_CRASH
+import com.countrysimulator.game.domain.CrisisType.CURRENCY_CRISIS
+import com.countrysimulator.game.domain.CrisisType.CIVIL_UNREST
+import com.countrysimulator.game.domain.CrisisType.GENERAL_STRIKE
+import com.countrysimulator.game.domain.CrisisType.CORRUPTION_SCANDAL
+import com.countrysimulator.game.domain.CrisisType.PANDEMIC
+import com.countrysimulator.game.domain.CrisisType.FAMINE
+
 /**
  * COUNTRY SIMULATOR v10.0 - GAME LOGIC
  * "The Living Nation" - Deep Emergent Gameplay System
@@ -99,21 +109,18 @@ object GameLogicV10 {
 
         // GDP Growth from sector performance
         val avgGrowth = sectors.map { it.growth }.average()
-        val gdpGrowth = (avgGrowth / 10 + indicators.gdpGrowth * 0.8).let { 
-            it.coerceAtLeast(-10.0).coerceAtMost(10.0) 
-        }
+        val gdpGrowthRaw = avgGrowth / 10 + indicators.gdpGrowth * 0.8
+        val gdpGrowth = gdpGrowthRaw.coerceAtLeast(-10.0).coerceAtMost(10.0)
 
         // Inflation from growth and money printing
         val inflationPressure = if (gdpGrowth > 3) 0.5 else 0
-        val inflation = (indicators.inflation + inflationPressure).let {
-            it.coerceAtLeast(0.0).coerceAtMost(50.0)
-        }
+        val inflationRaw = indicators.inflation + inflationPressure
+        val inflation = inflationRaw.coerceAtLeast(0.0).coerceAtMost(50.0)
 
         // Unemployment from sector employment
         val avgEmployment = sectors.map { it.employment }.average()
-        val unemployment = ((100 - avgEmployment) / 10 + if (gdpGrowth < 0) 2 else 0).let {
-            it.coerceAtLeast(0.0).coerceAtMost(50.0)
-        }
+        val unemploymentRaw = (100 - avgEmployment) / 10 + if (gdpGrowth < 0) 2 else 0
+        val unemployment = unemploymentRaw.coerceAtLeast(0.0).coerceAtMost(50.0)
 
         // Credit rating from debt and growth
         val creditRating = when {
