@@ -30,6 +30,11 @@ A deep, text-based country management strategy game for Android built with Kotli
 - **Military Doctrines**: Choose between Offensive, Defensive, Balanced, or Guerrilla strategies.
 - **Mercenaries**: Hire private military companies for quick power boosts.
 
+### 📖 Extreme Text-Based Mode (300 Features Integration)
+- **Deep Narrative Engine**: Experience all 300 game features through an immersive, procedurally generated text-based adventure format.
+- **Dynamic Scenarios**: Encounter complex scenarios with multiple choices (Aggressive, Measured, Exploit, Abandon) that directly impact your national stats, treasury, and resources.
+- **Terminal Aesthetics**: Play in a dedicated dark-mode terminal layout designed entirely for a hardcore text-management experience.
+
 ## 🎯 Gameplay Features
 
 - **10 Government Types**: From Democracy to Technocracy, each with unique mechanics.
