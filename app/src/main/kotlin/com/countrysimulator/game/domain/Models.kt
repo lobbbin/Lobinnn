@@ -328,7 +328,8 @@ data class GameState(
     val lastEvent: GameEvent? = null,
     val eventHistory: List<String> = emptyList(),
     val newsHeadline: String? = null,
-    val turnSummary: TurnSummary? = null
+    val turnSummary: TurnSummary? = null,
+    val textAdventureState: TextAdventureState = TextAdventureState()
 )
 
 // GameEvent uses functions so it CANNOT be serialized. It is transient and handled in memory.
@@ -1368,3 +1369,29 @@ data class DisasterEvent(
 enum class DisasterType {
     EARTHQUAKE, HURRICANE, FLOOD, WILDFIRE, TSUNAMI, VOLCANO,
     DROUGHT, PANDEMIC, INDUSTRIAL_ACCIDENT
+}
+
+// ----------------------------------------------------
+// EXTENDED: EXTREME TEXT-BASED ADVENTURE MODE MODELS
+// ----------------------------------------------------
+
+@Serializable
+data class TextAdventureState(
+    val isActive: Boolean = false,
+    val currentFeatureNodeId: String? = null,
+    val historyLog: List<String> = emptyList(),
+    val completedFeaturesCount: Int = 0
+)
+
+data class FeatureNode(
+    val id: String,
+    val title: String,
+    val description: String,
+    val options: List<FeatureOption>
+)
+
+data class FeatureOption(
+    val label: String,
+    val effectText: String,
+    val effect: (CountryStats, Int, Resources) -> Triple<CountryStats, Int, Resources>
+)

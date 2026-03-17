@@ -221,6 +221,82 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun negotiatePeace(nationId: String) = updateCountry { GameLogic.negotiatePeace(it, nationId) }
     fun boostMorale() = updateCountry { GameLogic.boostMorale(it) }
 
+    // ========== EXTREME TEXT ADVENTURE LOGIC ==========
+    fun startTextAdventure() {
+        _uiState.update { current ->
+            val gs = current.gameState ?: return@update current
+            val currentAdvState = gs.textAdventureState
+            
+            // If we are starting from scratch or already finished 300
+            val nextIndex = if (currentAdvState.completedFeaturesCount >= com.countrysimulator.game.content.EventDatabase.featureNames.size) {
+                0 
+            } else {
+                currentAdvState.completedFeaturesCount
+            }
+            
+            val node = com.countrysimulator.game.content.EventDatabase.getFeatureNode(nextIndex)
+            
+            val newAdvState = currentAdvState.copy(
+                isActive = true,
+                currentFeatureNodeId = node.id,
+                historyLog = currentAdvState.historyLog + ">>> INITIATING TEXT SCENARIO: ${node.title}"
+            )
+            val newState = gs.copy(textAdventureState = newAdvState)
+            viewModelScope.launch { repository.saveGame(newState) }
+            current.copy(gameState = newState)
+        }
+    }
+
+    fun handleTextAdventureOption(optionIndex: Int) {
+        _uiState.update { current ->
+            val gs = current.gameState ?: return@update current
+            val advState = gs.textAdventureState
+            
+            if (!advState.isActive || advState.currentFeatureNodeId == null) return@update current
+            
+            // Find current node index from ID
+            val currentIndex = advState.currentFeatureNodeId.removePrefix("feature_").toIntOrNull() ?: 0
+            val node = com.countrysimulator.game.content.EventDatabase.getFeatureNode(currentIndex)
+            val option = node.options.getOrNull(optionIndex) ?: return@update current
+            
+            // Apply effect
+            val (newStats, newTreasury, newResources) = option.effect(
+                gs.country.stats, gs.country.treasury, gs.country.resources
+            )
+            
+            val updatedCountry = gs.country.copy(stats = newStats, treasury = newTreasury, resources = newResources)
+            
+            // Move to next feature automatically or wait? Let's give them the next one.
+            val nextIndex = currentIndex + 1
+            val nextNode = if (nextIndex < com.countrysimulator.game.content.EventDatabase.featureNames.size) {
+                com.countrysimulator.game.content.EventDatabase.getFeatureNode(nextIndex)
+            } else null
+            
+            val logUpdate = ">>> YOU CHOSE: ${option.label}\n${option.effectText}"
+            
+            val newAdvState = advState.copy(
+                currentFeatureNodeId = nextNode?.id,
+                historyLog = advState.historyLog + logUpdate + if (nextNode != null) "\n>>> NEXT INITIATIVE: ${nextNode.title}" else "\n>>> ALL PROTOCOLS COMPLETED.",
+                completedFeaturesCount = nextIndex,
+                isActive = nextNode != null // auto quit if done 300
+            )
+            
+            val newState = gs.copy(country = updatedCountry, textAdventureState = newAdvState)
+            viewModelScope.launch { repository.saveGame(newState) }
+            current.copy(gameState = newState, incomeThisTurn = GameLogic.calculateTurnIncome(updatedCountry))
+        }
+    }
+    
+    fun quitTextAdventure() {
+        _uiState.update { current ->
+            val gs = current.gameState ?: return@update current
+            val newAdvState = gs.textAdventureState.copy(isActive = false)
+            val newState = gs.copy(textAdventureState = newAdvState)
+            viewModelScope.launch { repository.saveGame(newState) }
+            current.copy(gameState = newState)
+        }
+    }
+
     fun restartGame() {
         viewModelScope.launch {
             repository.clearGame()

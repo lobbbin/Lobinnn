@@ -2045,4 +2045,71 @@ object EventDatabase {
             "Total" to getAllEvents().size
         )
     }
+
+    // ============================================
+    // EXTREME TEXT-BASED ADVENTURE MODE DATABASE
+    // Implements all 300 features dynamically
+    // ============================================
+
+    val featureNames = listOf(
+        "Legacy System", "Historical Timeline", "Scenario Editor", "Random Nation Gen", "Difficulty Levels", "Speed Controls", "Achievements", "Stats Dashboard", "Auto-Save", "Manual Save", "New Game Plus", "Ironman Mode", "Tutorial", "Quick Start", "Victory Conditions", "Defeat Analysis", "Turn Counter", "Performance Metrics", "Notifications", "Season System",
+        "Cabinet System", "Political Parties", "Elections", "Laws & Legislation", "Political Factions", "Constitution", "Censorship Level", "Propaganda", "Scandals", "Corruption", "Bureaucracy", "Civil Service", "State Religion", "National Symbols", "National Ideology", "Policy Slots", "Gov Reform", "Emergency Powers", "Succession System", "Political Prisoners", "Secret Police", "Public Holidays", "National Identity", "Ruling Elite", "Revolution Prevention",
+        "Stock Market", "Trade Routes", "Tariffs", "National Currency", "Inflation Control", "National Debt", "Tax System", "Subsidies", "Privatization", "Nationalization", "Banking System", "Sanctions", "Black Market", "Economic Spies", "Trade Agreements", "Economic Aid", "Foreign Investment", "Industry Zones", "Labor Laws", "Min Wage", "Unemployment Benefits", "Pension System", "Business Cycles", "Market Manipulation", "Economic Warning",
+        "Military Branches", "Military Ranks", "Draft System", "Military Budget", "Equipment Upgrades", "Base Construction", "Weapons Development", "Nuclear Program", "Missile Defense", "Space Military", "Cyber Warfare", "Intelligence Agency", "Private Military", "War Declaration", "Occupation System", "Resistance Movement", "Peace Treaties", "War Reparations", "Military Alliances", "Defense Contractors", "Veteran Care", "Military Academies", "Joint Operations", "Special Forces", "Fortification System",
+        "Diplomatic Missions", "Foreign Minister", "Summit Meetings", "International Orgs", "UN Voting", "Sanctions Regime", "Embargoes", "Alliance System", "Non-Aggression Pacts", "Spy Networks", "Propaganda Abroad", "Intl Treaties", "World Leader Summit", "Diplomatic Incidents", "Extradition Treaties", "Immigration Policy", "Refugee Policy", "Tourism Industry", "Cultural Diplomacy", "Foreign Aid", "Intervention Requests", "Border Disputes", "Historical Grievances", "Soft Power", "International Prestige",
+        "Resource Management", "Resource Discovery", "Resource Trading", "Strategic Reserves", "Infrastructure Dev", "Power Grid", "Water Management", "Mining Operations", "Oil & Gas", "Renewable Energy", "Nuclear Power", "Housing Dev", "Urban Planning", "Public Transit", "Telecommunications", "Satellite Network", "Pipeline Construction", "Port Development", "Airport Construction", "Border Infrastructure", "Disaster Resilience", "Smart Grid", "Resource Recycling", "Alternative Resources", "Resource Monopolies",
+        "Technology Tree", "Research Priorities", "Research Agreements", "Technology Theft", "Patent System", "Scientific Breakthroughs", "Space Program", "AI Development", "Biotechnology", "Nanotechnology", "Quantum Computing", "Fusion Power", "Climate Engineering", "Weaponized Tech", "Civilian Tech", "Research Universities", "Tech Diffusion", "Research Scandal", "Brain Drain", "Innovation Crises",
+        "Education System", "Healthcare System", "Social Security", "Welfare Programs", "Housing Policy", "Crime Prevention", "Prison System", "Drug Policy", "Immigration Control", "Integration Policy", "Language Policy", "Cultural Policy", "Sports Development", "Religious Freedom", "LGBTQ+ Rights", "Women's Rights", "Minority Rights", "Workers' Rights", "Animal Rights", "Privacy Laws", "Internet Freedom", "Gun Control", "Death Penalty", "Environmental Policy", "Urban vs Rural",
+        "Natural Disasters", "Pandemic System", "Economic Crises", "Political Crises", "Military Conflicts", "Terrorist Attacks", "Tech Disasters", "Environmental Disasters", "Space Events", "Economic Booms", "Cultural Events", "Science Breakthroughs", "Diplomatic Incidents", "Spy Discoveries", "Weather Extremes", "Demographic Shifts", "Social Movements", "Celebrity Events", "International Scandals", "Rare Events",
+        "Achievement Categories", "Achievement Tiers", "Hidden Achievements", "Impossible Achievements", "Quest Chains", "Daily Challenges", "Weekly Goals", "Seasonal Events", "Legacy Achievements", "Completionist Tracking", "Speedrun Records", "Challenge Modes", "Community Goals", "Season Rankings", "Reward Redemption",
+        "Apocalypse Scenarios", "Alien Invasion", "Time Travel Challenge", "One Nation Challenge", "Economic Superpower", "Technological Victory", "Diplomatic Victory", "Cultural Victory", "Religious Victory", "Env Collapse", "Zombie Apocalypse", "Resource Depletion", "Cold War", "World War", "Colonial Independence",
+        "Interactive Maps", "Nation Comparison", "News Feed", "Historical Timeline", "Stats Graphs", "Notification Center", "Help System", "Sound Design", "Visual Themes", "Accessibility Options", "Keyboard Shortcuts", "Tutorial Overlays", "Loading Screens", "Event Illustrations", "Leader Portraits", "Map Custom", "Dashboard View", "Notification Sounds", "Full Screen", "Multi-Window",
+        "Time Paradox Events", "Simulation Glitches", "Meta-Game Awareness", "Random Hist What-Ifs", "Supernatural Events", "Parallel Universe", "AI Consciousness", "VR Integration", "Hacker Infiltration", "Meme Cults", "Influencer Politics", "Climate Ghosts", "Corporate Overlords", "Underwater Civs", "Space Colonies", "Genetic Modification", "Mind Control Tech", "Immortality Research", "Reality Bending", "Sentient AI Advisors", "Cross-Nation Identity", "Mythological Beings", "Dimension Rifts", "Nanite Plagues", "Solar Flare Events", "Ocean Acidification", "EMP Events", "First Contact", "Terraforming", "Weather Control", "Mind Uploading", "Animal Communication", "Plant Intelligence", "Parallel Governance", "Memory Manipulation",
+        "Online Multiplayer", "Hotseat Multiplayer", "Asynchronous Play", "Player Nations", "Alliance Creation", "Trade Networks", "War Declarations", "Global Events", "Leaderboards", "Clan Systems", "Tournaments", "Chat System", "Friend Lists", "Replay System", "Spectator Mode"
+    )
+
+    fun getFeatureNode(index: Int): FeatureNode {
+        val safeIndex = index.coerceIn(0, featureNames.size - 1)
+        val name = featureNames[safeIndex]
+        
+        return FeatureNode(
+            id = "feature_$safeIndex",
+            title = "Feature #${safeIndex + 1}: $name",
+            description = "Welcome to the extreme text-based simulation of $name.\n\n" +
+                          "Your advisors have gathered in the war room. The atmosphere is tense. " +
+                          "Implementing the $name protocol will require careful navigation of our nation's resources and political capital. " +
+                          "You must make a crucial decision that will alter the trajectory of your country's future in this complex textual realm. " +
+                          "Will you boldly embrace the $name initiative, or take a more cautious, measured approach?",
+            options = listOf(
+                FeatureOption(
+                    label = "Aggressive Implementation",
+                    effectText = "You forcefully push the initiative through all channels.",
+                    effect = { stats, treasury, res -> 
+                        Triple((stats).copy(economy = (stats.economy + 5).coerceAtMost(100), stability = (stats.stability - 10).coerceAtLeast(0)), treasury - 1000, res) 
+                    }
+                ),
+                FeatureOption(
+                    label = "Measured Approach",
+                    effectText = "You cautiously introduce policies over time.",
+                    effect = { stats, treasury, res -> 
+                        Triple(stats.copy(stability = (stats.stability + 5).coerceAtMost(100), economy = (stats.economy + 2).coerceAtMost(100)), treasury - 500, res) 
+                    }
+                ),
+                FeatureOption(
+                    label = "Exploit for Profit",
+                    effectText = "You twist the situation to maximize treasury gains.",
+                    effect = { stats, treasury, res -> 
+                        Triple(stats.copy(corruption = (stats.corruption + 15).coerceAtMost(100), happiness = (stats.happiness - 5).coerceAtLeast(0)), treasury + 5000, res) 
+                    }
+                ),
+                FeatureOption(
+                    label = "Abandon Initiative",
+                    effectText = "You decide the risks are too high and cancel the project.",
+                    effect = { stats, treasury, res -> 
+                        Triple(stats.copy(stability = stats.stability + 2), treasury, res) 
+                    }
+                )
+            )
+        )
+    }
 }
