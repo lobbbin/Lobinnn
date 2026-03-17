@@ -1,7 +1,10 @@
 package com.countrysimulator.game.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -1045,20 +1048,128 @@ fun MarketCard(name: String, price: Int, stock: Int, onSell: () -> Unit) {
 
 @Composable
 fun TurnSummaryDialog(summary: TurnSummary, onDismiss: () -> Unit) {
+    var showContinue by remember { mutableStateOf(false) }
+    
+    // Auto-show continue button after 1.5 seconds
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(1500)
+        showContinue = true
+    }
+    
+    // Calculate net change
+    val netChange = summary.grossIncome - summary.totalExpenses
+    val netColor = if (netChange >= 0) Color(0xFF4CAF50) else Color(0xFFF44336)
+    val netSign = if (netChange >= 0) "+" else ""
+    
+    // Categorize messages
+    val positiveEvents = summary.messages.filter { 
+        it.contains("gained", ignoreCase = true) || 
+        it.contains("Success", ignoreCase = true) ||
+        it.contains("boom", ignoreCase = true) ||
+        it.contains("breakthrough", ignoreCase = true) ||
+        it.contains("festival", ignoreCase = true)
+    }
+    val negativeEvents = summary.messages.filter { 
+        it.contains("cost", ignoreCase = true) || 
+        it.contains("Failed", ignoreCase = true) ||
+        it.contains("crisis", ignoreCase = true) ||
+        it.contains("disaster", ignoreCase = true) ||
+        it.contains("unrest", ignoreCase = true)
+    }
+    val neutralEvents = summary.messages.filter { 
+        it !in positiveEvents && it !in negativeEvents 
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Turn Summary", fontWeight = FontWeight.Bold) },
+        title = { 
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("📊 ", fontSize = 24.sp)
+                Text("Turn Report", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+        },
         text = {
-            Column {
-                Text("Income: +$${summary.grossIncome}", color = Color.Green)
-                Text("Expenses: -$${summary.totalExpenses}", color = Color.Red)
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-                LazyColumn(modifier = Modifier.heightIn(max = 150.dp)) {
-                    items(summary.messages) { msg -> Text("• $msg", fontSize = 12.sp) }
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                // Financial Summary Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("💰 Income", fontSize = 14.sp)
+                            Text("+$${summary.grossIncome}", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("💸 Expenses", fontSize = 14.sp)
+                            Text("-$${summary.totalExpenses}", color = Color(0xFFF44336), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Divider()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("📈 Net Change", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("$netSign$${netChange}", color = netColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                    }
+                }
+                
+                // Events Section
+                if (summary.messages.isNotEmpty()) {
+                    Text("📋 Events This Turn", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Positive events
+                    if (positiveEvents.isNotEmpty()) {
+                        positiveEvents.forEach { msg ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Text("✅ ", fontSize = 12.sp)
+                                Text(msg, fontSize = 12.sp, color = Color(0xFF4CAF50))
+                            }
+                        }
+                    }
+                    
+                    // Negative events
+                    if (negativeEvents.isNotEmpty()) {
+                        negativeEvents.forEach { msg ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Text("⚠️ ", fontSize = 12.sp)
+                                Text(msg, fontSize = 12.sp, color = Color(0xFFFF9800))
+                            }
+                        }
+                    }
+                    
+                    // Neutral events
+                    if (neutralEvents.isNotEmpty()) {
+                        neutralEvents.forEach { msg ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                                Text("• ", fontSize = 12.sp)
+                                Text(msg, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                } else {
+                    Text("🔹 A quiet turn with no major events.", fontSize = 12.sp, color = Color.Gray)
                 }
             }
         },
-        confirmButton = { Button(onClick = onDismiss) { Text("Continue") } }
+        confirmButton = {
+            AnimatedVisibility(
+                visible = showContinue,
+                enter = fadeIn(animationSpec = tween(300)),
+                exit = fadeOut(animationSpec = tween(300))
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text("Continue →", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     )
 }
 
