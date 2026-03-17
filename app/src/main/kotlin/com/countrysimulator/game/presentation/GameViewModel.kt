@@ -154,6 +154,38 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun hireMinister(name: String, role: MinisterRole) = updateCountry { GameLogic.hireMinister(it, name, role) }
     fun triggerElection() = updateCountry { GameLogic.triggerElection(it) }
 
+    // ========== NEW UPGRADE CATEGORIES (30) ==========
+    fun upgradeAgriculture() = updateCountry { GameLogic.upgradeAgriculture(it) }
+    fun upgradeIndustry() = updateCountry { GameLogic.upgradeIndustry(it) }
+    fun upgradeEnergy() = updateCountry { GameLogic.upgradeEnergy(it) }
+    fun upgradeTransportation() = updateCountry { GameLogic.upgradeTransportation(it) }
+    fun upgradeHousing() = updateCountry { GameLogic.upgradeHousing(it) }
+    fun upgradeSocialServices() = updateCountry { GameLogic.upgradeSocialServices(it) }
+    fun upgradeImmigration() = updateCountry { GameLogic.upgradeImmigration(it) }
+    fun upgradeNationalSecurity() = updateCountry { GameLogic.upgradeNationalSecurity(it) }
+    fun upgradeEmergencyServices() = updateCountry { GameLogic.upgradeEmergencyServices(it) }
+    fun upgradeResearch() = updateCountry { GameLogic.upgradeResearch(it) }
+    fun upgradeSpaceProgram() = updateCountry { GameLogic.upgradeSpaceProgram(it) }
+    fun upgradeTrade() = updateCountry { GameLogic.upgradeTrade(it) }
+    fun upgradeBanking() = updateCountry { GameLogic.upgradeBanking(it) }
+    fun upgradeTourism() = updateCountry { GameLogic.upgradeTourism(it) }
+    fun upgradeCulture() = updateCountry { GameLogic.upgradeCulture(it) }
+    fun upgradeSports() = updateCountry { GameLogic.upgradeSports(it) }
+    fun upgradeMedia() = updateCountry { GameLogic.upgradeMedia(it) }
+    fun upgradeReligion() = updateCountry { GameLogic.upgradeReligion(it) }
+    fun upgradeYouth() = updateCountry { GameLogic.upgradeYouth(it) }
+    fun upgradeElderly() = updateCountry { GameLogic.upgradeElderly(it) }
+    fun upgradeLabor() = updateCountry { GameLogic.upgradeLabor(it) }
+    fun upgradeAntiCorruption() = updateCountry { GameLogic.upgradeAntiCorruption(it) }
+    fun upgradeCybersecurity() = updateCountry { GameLogic.upgradeCybersecurity(it) }
+    fun upgradeInfrastructureGeneral() = updateCountry { GameLogic.upgradeInfrastructureGeneral(it) }
+    fun upgradeTelecommunications() = updateCountry { GameLogic.upgradeTelecommunications(it) }
+    fun upgradeNuclear() = updateCountry { GameLogic.upgradeNuclear(it) }
+    fun upgradeMining() = updateCountry { GameLogic.upgradeMining(it) }
+    fun upgradeForestry() = updateCountry { GameLogic.upgradeForestry(it) }
+    fun upgradeFisheries() = updateCountry { GameLogic.upgradeFisheries(it) }
+    fun upgradeForeignAid() = updateCountry { GameLogic.upgradeForeignAid(it) }
+
     fun restartGame() {
         viewModelScope.launch {
             repository.clearGame()

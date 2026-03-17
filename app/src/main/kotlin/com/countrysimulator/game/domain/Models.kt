@@ -38,7 +38,8 @@ data class CountryStats(
     val crime: Int = 20,
     val corruption: Int = 10,
     val propaganda: Int = 0,
-    val softPower: Int = 0
+    val softPower: Int = 0,
+    val security: Int = 30
 )
 
 @Serializable

@@ -472,6 +472,340 @@ object GameLogic {
         return country
     }
 
+    // ========== NEW UPGRADE CATEGORIES (27+) ==========
+
+    // 1. Agriculture - Farm subsidies, food production
+    fun upgradeAgriculture(country: Country): Country {
+        if (country.treasury >= 1200) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 5).coerceAtMost(100)),
+                resources = country.resources.copy(food = (country.resources.food + 40).coerceAtMost(country.resources.maxFood)),
+                treasury = country.treasury - 1200
+            )
+        }
+        return country
+    }
+
+    // 2. Industry - Manufacturing, factories
+    fun upgradeIndustry(country: Country): Country {
+        if (country.treasury >= 2000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 10).coerceAtMost(100), environment = (country.stats.environment - 5).coerceAtLeast(0)),
+                treasury = country.treasury - 2000
+            )
+        }
+        return country
+    }
+
+    // 3. Energy - Power plants, renewable energy
+    fun upgradeEnergy(country: Country): Country {
+        if (country.treasury >= 1800) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 40).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 1800
+            )
+        }
+        return country
+    }
+
+    // 4. Transportation - Roads, railways, ports
+    fun upgradeTransportation(country: Country): Country {
+        if (country.treasury >= 1500) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100), economy = (country.stats.economy + 5).coerceAtMost(100)),
+                treasury = country.treasury - 1500
+            )
+        }
+        return country
+    }
+
+    // 5. Housing - Public housing, urban development
+    fun upgradeHousing(country: Country): Country {
+        if (country.treasury >= 1300) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), stability = (country.stats.stability + 3).coerceAtMost(100)),
+                treasury = country.treasury - 1300
+            )
+        }
+        return country
+    }
+
+    // 6. Social Services - Welfare, benefits
+    fun upgradeSocialServices(country: Country): Country {
+        if (country.treasury >= 1600) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 12).coerceAtMost(100), economy = (country.stats.economy - 3).coerceAtLeast(0)),
+                treasury = country.treasury - 1600
+            )
+        }
+        return country
+    }
+
+    // 7. Immigration - Border control, integration
+    fun upgradeImmigration(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(population = country.stats.population + 10000, stability = (country.stats.stability - 2).coerceAtLeast(0)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    // 8. National Security - Internal security, police
+    fun upgradeNationalSecurity(country: Country): Country {
+        if (country.treasury >= 1400) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 10).coerceAtMost(100), crime = (country.stats.crime - 8).coerceAtLeast(0)),
+                treasury = country.treasury - 1400
+            )
+        }
+        return country
+    }
+
+    // 9. Emergency Services - Fire, ambulance, disaster response
+    fun upgradeEmergencyServices(country: Country): Country {
+        if (country.treasury >= 1100) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 5).coerceAtMost(100), happiness = (country.stats.happiness + 3).coerceAtMost(100)),
+                treasury = country.treasury - 1100
+            )
+        }
+        return country
+    }
+
+    // 10. Research - Universities, labs, R&D
+    fun upgradeResearch(country: Country): Country {
+        if (country.treasury >= 2200) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 15).coerceAtMost(100)),
+                treasury = country.treasury - 2200
+            )
+        }
+        return country
+    }
+
+    // 11. Space Program - Satellites, space exploration
+    fun upgradeSpaceProgram(country: Country): Country {
+        if (country.treasury >= 3500) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 10).coerceAtMost(100), softPower = (country.stats.softPower + 8).coerceAtMost(100)),
+                treasury = country.treasury - 3500
+            )
+        }
+        return country
+    }
+
+    // 12. Trade - Commerce, markets, exports
+    fun upgradeTrade(country: Country): Country {
+        if (country.treasury >= 1000) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1000
+            )
+        }
+        return country
+    }
+
+    // 13. Banking - Financial sector, central bank
+    fun upgradeBanking(country: Country): Country {
+        if (country.treasury >= 1700) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 6).coerceAtMost(100), corruption = (country.stats.corruption + 2).coerceAtMost(100)),
+                treasury = country.treasury - 1700
+            )
+        }
+        return country
+    }
+
+    // 14. Tourism - Travel, hospitality
+    fun upgradeTourism(country: Country): Country {
+        if (country.treasury >= 900) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 8).coerceAtMost(100), economy = (country.stats.economy + 5).coerceAtMost(100)),
+                treasury = country.treasury - 900
+            )
+        }
+        return country
+    }
+
+    // 15. Culture - Arts, museums, heritage
+    fun upgradeCulture(country: Country): Country {
+        if (country.treasury >= 850) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 10).coerceAtMost(100), happiness = (country.stats.happiness + 5).coerceAtMost(100)),
+                treasury = country.treasury - 850
+            )
+        }
+        return country
+    }
+
+    // 16. Sports - Athletic programs, stadiums
+    fun upgradeSports(country: Country): Country {
+        if (country.treasury >= 750) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), softPower = (country.stats.softPower + 5).coerceAtMost(100)),
+                treasury = country.treasury - 750
+            )
+        }
+        return country
+    }
+
+    // 17. Media - Press, broadcasting, internet
+    fun upgradeMedia(country: Country): Country {
+        if (country.treasury >= 950) {
+            return country.copy(
+                stats = country.stats.copy(propaganda = (country.stats.propaganda + 10).coerceAtMost(100), softPower = (country.stats.softPower + 3).coerceAtMost(100)),
+                treasury = country.treasury - 950
+            )
+        }
+        return country
+    }
+
+    // 18. Religion - Religious affairs, places of worship
+    fun upgradeReligion(country: Country): Country {
+        if (country.treasury >= 600) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 6).coerceAtMost(100), happiness = (country.stats.happiness + 4).coerceAtMost(100)),
+                treasury = country.treasury - 600
+            )
+        }
+        return country
+    }
+
+    // 19. Youth - Youth programs, recreation
+    fun upgradeYouth(country: Country): Country {
+        if (country.treasury >= 700) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 6).coerceAtMost(100), education = (country.stats.education + 3).coerceAtMost(100)),
+                treasury = country.treasury - 700
+            )
+        }
+        return country
+    }
+
+    // 20. Elderly - Elder care, pensions
+    fun upgradeElderly(country: Country): Country {
+        if (country.treasury >= 800) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 8).coerceAtMost(100), stability = (country.stats.stability + 3).coerceAtMost(100)),
+                treasury = country.treasury - 800
+            )
+        }
+        return country
+    }
+
+    // 21. Labor - Workers rights, unions
+    fun upgradeLabor(country: Country): Country {
+        if (country.treasury >= 550) {
+            return country.copy(
+                stats = country.stats.copy(happiness = (country.stats.happiness + 5).coerceAtMost(100), economy = (country.stats.economy - 2).coerceAtLeast(0)),
+                treasury = country.treasury - 550
+            )
+        }
+        return country
+    }
+
+    // 22. Anti-Corruption - Transparency, oversight
+    fun upgradeAntiCorruption(country: Country): Country {
+        if (country.treasury >= 1100) {
+            return country.copy(
+                stats = country.stats.copy(corruption = (country.stats.corruption - 12).coerceAtLeast(0), stability = (country.stats.stability + 5).coerceAtMost(100)),
+                treasury = country.treasury - 1100
+            )
+        }
+        return country
+    }
+
+    // 23. Cybersecurity - Digital security, IT infrastructure
+    fun upgradeCybersecurity(country: Country): Country {
+        if (country.treasury >= 1300) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 6).coerceAtMost(100), security = (country.stats.security + 8).coerceAtMost(100)),
+                treasury = country.treasury - 1300
+            )
+        }
+        return country
+    }
+
+    // 24. Infrastructure - General infrastructure (already exists but enhanced)
+    fun upgradeInfrastructureGeneral(country: Country): Country {
+        if (country.treasury >= 1800) {
+            return country.copy(
+                stats = country.stats.copy(stability = (country.stats.stability + 8).coerceAtMost(100), economy = (country.stats.economy + 6).coerceAtMost(100)),
+                treasury = country.treasury - 1800
+            )
+        }
+        return country
+    }
+
+    // 25. Telecommunications - Internet, phones
+    fun upgradeTelecommunications(country: Country): Country {
+        if (country.treasury >= 1400) {
+            return country.copy(
+                stats = country.stats.copy(technology = (country.stats.technology + 8).coerceAtMost(100), economy = (country.stats.economy + 4).coerceAtMost(100)),
+                treasury = country.treasury - 1400
+            )
+        }
+        return country
+    }
+
+    // 26. Nuclear - Civil nuclear power
+    fun upgradeNuclear(country: Country): Country {
+        if (country.treasury >= 5000) {
+            return country.copy(
+                resources = country.resources.copy(energy = (country.resources.energy + 60).coerceAtMost(country.resources.maxEnergy)),
+                treasury = country.treasury - 5000
+            )
+        }
+        return country
+    }
+
+    // 27. Mining - Resource extraction
+    fun upgradeMining(country: Country): Country {
+        if (country.treasury >= 1600) {
+            return country.copy(
+                resources = country.resources.copy(materials = (country.resources.materials + 35).coerceAtMost(country.resources.maxMaterials)),
+                stats = country.stats.copy(environment = (country.stats.environment - 5).coerceAtLeast(0)),
+                treasury = country.treasury - 1600
+            )
+        }
+        return country
+    }
+
+    // 28. Forestry - Forest management
+    fun upgradeForestry(country: Country): Country {
+        if (country.treasury >= 900) {
+            return country.copy(
+                stats = country.stats.copy(environment = (country.stats.environment + 12).coerceAtMost(100)),
+                treasury = country.treasury - 900
+            )
+        }
+        return country
+    }
+
+    // 29. Fisheries - Ocean resources
+    fun upgradeFisheries(country: Country): Country {
+        if (country.treasury >= 750) {
+            return country.copy(
+                stats = country.stats.copy(economy = (country.stats.economy + 4).coerceAtMost(100), environment = (country.stats.environment + 3).coerceAtMost(100)),
+                treasury = country.treasury - 750
+            )
+        }
+        return country
+    }
+
+    // 30. Foreign Aid - International assistance
+    fun upgradeForeignAid(country: Country): Country {
+        if (country.treasury >= 2500) {
+            return country.copy(
+                stats = country.stats.copy(softPower = (country.stats.softPower + 15).coerceAtMost(100), economy = (country.stats.economy + 3).coerceAtMost(100)),
+                treasury = country.treasury - 2500
+            )
+        }
+        return country
+    }
+
     fun getGovernmentBonus(type: GovernmentType): (CountryStats) -> CountryStats {
         return { stats ->
             stats.copy(

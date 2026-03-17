@@ -110,10 +110,10 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                                 onClick = { currentScreen = Screen.WORLD }
                             )
                             NavigationBarItem(
-                                icon = { Icon(Icons.Default.MoreVert, "More") },
-                                label = { Text("More") },
-                                selected = currentScreen == Screen.INTEL || currentScreen == Screen.UN || currentScreen == Screen.MARKET,
-                                onClick = { currentScreen = Screen.INTEL }
+                                icon = { Icon(Icons.Default.Build, "Actions") },
+                                label = { Text("Actions") },
+                                selected = currentScreen == Screen.ACTIONS,
+                                onClick = { currentScreen = Screen.ACTIONS }
                             )
                         }
                     }
@@ -127,6 +127,7 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
                             Screen.WORLD -> WorldScreen(gameState, viewModel)
                             Screen.UN -> UnitedNationsScreen(gameState)
                             Screen.MARKET -> MarketScreen(gameState, viewModel)
+                            Screen.ACTIONS -> ActionsScreen(gameState, viewModel)
                         }
 
                         // Floating Sub-menu for More
@@ -156,7 +157,7 @@ fun CountrySimulatorApp(viewModel: GameViewModel = viewModel()) {
     }
 }
 
-enum class Screen { DASHBOARD, POLITICS, MILITARY, INTEL, WORLD, UN, MARKET }
+enum class Screen { DASHBOARD, POLITICS, MILITARY, INTEL, WORLD, UN, MARKET, ACTIONS }
 enum class DiplomacyAction { IMPROVE, TRADE, ALLIANCE, WAR, AID, SANCTION }
 
 @Composable
@@ -690,6 +691,139 @@ fun MarketScreen(gameState: GameState, viewModel: GameViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
         Text("Global Instability: ${gameState.globalMarket.globalInstability}%", color = if (gameState.globalMarket.globalInstability > 50) Color.Red else Color.Green)
         Text("High instability increases price volatility.", fontSize = 12.sp, color = Color.Gray)
+    }
+}
+
+data class ActionCategory(val name: String, val icon: String, val cost: Int, val description: String)
+
+@Composable
+fun ActionsScreen(gameState: GameState, viewModel: GameViewModel) {
+    val treasury = gameState.country.treasury
+    val categories = listOf(
+        ActionCategory("Economy", "💰", 1000, "Boost economic growth"),
+        ActionCategory("Military", "⚔️", 800, "Strengthen armed forces"),
+        ActionCategory("Education", "📚", 1200, "Improve schools and universities"),
+        ActionCategory("Healthcare", "🏥", 1000, "Better medical care"),
+        ActionCategory("Environment", "🌳", 1500, "Protect nature"),
+        ActionCategory("Infrastructure", "🏗️", 1800, "Build roads and bridges"),
+        ActionCategory("Technology", "🔬", 1500, "Advance research"),
+        ActionCategory("Security", "🛡️", 1400, "Internal safety"),
+        ActionCategory("Agriculture", "🌾", 1200, "Food production"),
+        ActionCategory("Industry", "🏭", 2000, "Manufacturing sector"),
+        ActionCategory("Energy", "⚡", 1800, "Power generation"),
+        ActionCategory("Transportation", "🚂", 1500, "Transport networks"),
+        ActionCategory("Housing", "🏠", 1300, "Urban development"),
+        ActionCategory("Social Services", "❤️", 1600, "Welfare programs"),
+        ActionCategory("Immigration", "🛂", 800, "Population growth"),
+        ActionCategory("Emergency", "🚑", 1100, "Disaster response"),
+        ActionCategory("Research", "🔬", 2200, "Scientific R&D"),
+        ActionCategory("Space", "🚀", 3500, "Space exploration"),
+        ActionCategory("Trade", "📦", 1000, "Commerce boost"),
+        ActionCategory("Banking", "🏦", 1700, "Financial sector"),
+        ActionCategory("Tourism", "✈️", 900, "Travel industry"),
+        ActionCategory("Culture", "🎭", 850, "Arts and heritage"),
+        ActionCategory("Sports", "⚽", 750, "Athletic programs"),
+        ActionCategory("Media", "📺", 950, "Broadcasting"),
+        ActionCategory("Religion", "⛪", 600, "Religious affairs"),
+        ActionCategory("Youth", "👶", 700, "Youth programs"),
+        ActionCategory("Elderly", "👴", 800, "Pension systems"),
+        ActionCategory("Labor", "🔧", 550, "Workers rights"),
+        ActionCategory("Anti-Corruption", "🔍", 1100, "Transparency"),
+        ActionCategory("Cyber", "💻", 1300, "Digital security"),
+        ActionCategory("Telecom", "📡", 1400, "Internet & phones"),
+        ActionCategory("Nuclear", "☢️", 5000, "Civil nuclear power"),
+        ActionCategory("Mining", "⛏️", 1600, "Resource extraction"),
+        ActionCategory("Forestry", "🌲", 900, "Forest management"),
+        ActionCategory("Fisheries", "🐟", 750, "Ocean resources"),
+        ActionCategory("Foreign Aid", "🤝", 2500, "International aid")
+    )
+
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            Text("National Actions", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text("Invest in your nation's development", fontSize = 14.sp, color = Color.Gray)
+            Text("Treasury: $${formatNumber(treasury)}", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        items(categories.chunked(2)) { rowCategories ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowCategories.forEach { cat ->
+                    ActionCard(cat, treasury >= cat.cost, {
+                        when (cat.name) {
+                            "Economy" -> viewModel.investInEconomy()
+                            "Military" -> viewModel.recruitMilitary()
+                            "Education" -> viewModel.investInEducation()
+                            "Healthcare" -> viewModel.investInHealthcare()
+                            "Environment" -> viewModel.improveEnvironment()
+                            "Infrastructure" -> viewModel.upgradeInfrastructureGeneral()
+                            "Technology" -> viewModel.investInTechnology()
+                            "Security" -> viewModel.upgradeNationalSecurity()
+                            "Agriculture" -> viewModel.upgradeAgriculture()
+                            "Industry" -> viewModel.upgradeIndustry()
+                            "Energy" -> viewModel.upgradeEnergy()
+                            "Transportation" -> viewModel.upgradeTransportation()
+                            "Housing" -> viewModel.upgradeHousing()
+                            "Social Services" -> viewModel.upgradeSocialServices()
+                            "Immigration" -> viewModel.upgradeImmigration()
+                            "Emergency" -> viewModel.upgradeEmergencyServices()
+                            "Research" -> viewModel.upgradeResearch()
+                            "Space" -> viewModel.upgradeSpaceProgram()
+                            "Trade" -> viewModel.upgradeTrade()
+                            "Banking" -> viewModel.upgradeBanking()
+                            "Tourism" -> viewModel.upgradeTourism()
+                            "Culture" -> viewModel.upgradeCulture()
+                            "Sports" -> viewModel.upgradeSports()
+                            "Media" -> viewModel.upgradeMedia()
+                            "Religion" -> viewModel.upgradeReligion()
+                            "Youth" -> viewModel.upgradeYouth()
+                            "Elderly" -> viewModel.upgradeElderly()
+                            "Labor" -> viewModel.upgradeLabor()
+                            "Anti-Corruption" -> viewModel.upgradeAntiCorruption()
+                            "Cyber" -> viewModel.upgradeCybersecurity()
+                            "Telecom" -> viewModel.upgradeTelecommunications()
+                            "Nuclear" -> viewModel.upgradeNuclear()
+                            "Mining" -> viewModel.upgradeMining()
+                            "Forestry" -> viewModel.upgradeForestry()
+                            "Fisheries" -> viewModel.upgradeFisheries()
+                            "Foreign Aid" -> viewModel.upgradeForeignAid()
+                        }
+                    }, Modifier.weight(1f))
+                }
+                if (rowCategories.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+fun ActionCard(category: ActionCategory, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(category.icon, fontSize = 24.sp)
+            Text(category.name, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(category.description, fontSize = 9.sp, color = Color.Gray)
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = onClick,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp)
+            ) {
+                Text("$${category.cost}", fontSize = 10.sp)
+            }
+        }
     }
 }
 
