@@ -232,7 +232,7 @@ data class Crisis(
     val response: CrisisResponse? = null
 )
 
-@Serializable
+// Note: Enum classes don't need @Serializable annotation
 enum class CrisisType {
     // Economic
     BANK_RUN,
