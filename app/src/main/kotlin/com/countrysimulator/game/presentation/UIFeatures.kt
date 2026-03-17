@@ -103,8 +103,12 @@ data class NewsArticle(
 )
 
 enum class NewsCategory {
-    POLITICS, ECONOMY, MILITARY, DIPLOMACY,
-    SCIENCE, CULTURE, ENVIRONMENT, DISASTER, SPORTS
+    POLITICS, ECONOMY, MILITARY, DIPLOMACY, SCIENCE, CULTURE, ENVIRONMENT
+}
+
+enum class NotificationPriority {
+    LOW, NORMAL, HIGH, URGENT
+}    SCIENCE, CULTURE, ENVIRONMENT, DISASTER, SPORTS
 }
 
 enum class NewsImportance {
@@ -131,7 +135,7 @@ object NewsGenerator {
                 "Election Results In $nationName",
                 "Political Reform Proposed in $nationName"
             )
-            NewsCategory.ECONOMICS -> listOf(
+            NewsCategory.ECONOMY -> listOf(
                 "Economic Growth in $nationName",
                 "Trade Deal Signed by $nationName",
                 "Market Fluctuations Affect $nationName"
@@ -166,9 +170,12 @@ object NewsGenerator {
 @Serializable
 data class HistoricalTimeline(
     val events: List<TimelineEvent> = emptyList(),
-    val yearRange: IntRange = 1800..2100,
+    val startYear: Int = 1800,
+    val endYear: Int = 2100,
     val zoomLevel: Float = 1.0f
-)
+) {
+    val yearRange: IntRange get() = startYear..endYear
+}
 
 @Serializable
 data class TimelineEvent(
@@ -414,7 +421,7 @@ data class AccessibilitySettings(
     val monoAudio: Boolean = false
 )
 
-enum class TextSize {
+enum class TextSize(val scale: Float) {
     SMALL(0.8f), MEDIUM(1.0f), LARGE(1.2f), EXTRA_LARGE(1.5f)
 }
 
@@ -546,7 +553,8 @@ data class DashboardWidget(
     val title: String,
     val position: Int,
     val isVisible: Boolean = true,
-    val config: Map<String, Any> = emptyMap()
+    val configKeys: List<String> = emptyList(),
+    val configValues: List<String> = emptyList()
 )
 
 enum class WidgetType {
@@ -631,7 +639,7 @@ object UIController {
         return state.copy(
             notifications = state.notifications.copy(
                 notifications = updated,
-                unreadCount = state.notifications.unifications - 1.coerceAtLeast(0)
+                unreadCount = (state.notifications.unreadCount - 1).coerceAtLeast(0)
             )
         )
     }

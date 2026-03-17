@@ -210,7 +210,7 @@ data class PlayerAlliance(
     val leaderId: String,
     val memberIds: List<String> = emptyList(),
     val createdAt: Long = 0,
-    val charter: AllianceCharter = AllianceCharter(),
+    val charter: AllianceCharter = AllianceCharter(name = "Default Charter", description = "Alliance charter"),
     val diplomacy: AllianceDiplomacy = AllianceDiplomacy(),
     val forums: List<AlliancePost> = emptyList()
 )
@@ -649,6 +649,8 @@ object MultiplayerController {
         val hostPlayer = MultiplayerPlayer(
             id = hostId,
             name = hostName,
+            nationId = null,
+            nationName = null,
             status = PlayerStatus.READY,
             isHost = true
         )
