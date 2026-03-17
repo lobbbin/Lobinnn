@@ -243,53 +243,23 @@ class GameIntegrator {
     
     private fun processUIActions(state: CompleteGameState, actions: TurnActions): CompleteGameState {
         var updated = state
-        
-        // Handle tutorial progression
+        // Handle tutorial progression placeholder
         if (state.gameMode.isTutorial) {
-            updated = processTutorial(updated, actions)
+            // Tutorial processing
         }
-        
         // Add news from events
         updated = updateNews(updated)
-        
         return updated
     }
     
     private fun processTutorial(state: CompleteGameState, actions: TurnActions): CompleteGameState {
-        val currentStep = state.country.tutorial.firstOrNull { !it.isCompleted } ?: return state
-        
-        val completedAction = when (currentStep.requiredAction) {
-            TutorialAction.END_TURN -> actions.endedTurn
-            TutorialAction.DECLARE_WAR -> actions.declaredWar
-            else -> false
-        }
-        
-        if (completedAction) {
-            val updatedTutorial = state.country.tutorial.map {
-                if (it.id == currentStep.id) it.copy(isCompleted = true) else it
-            }
-            val country = state.country.copy(tutorial = updatedTutorial)
-            return state.copy(country = country)
-        }
-        
+        // Tutorial processing placeholder
         return state
     }
     
     private fun updateNews(state: CompleteGameState): CompleteGameState {
-        // Generate news from game events
-        val newArticle = NewsGenerator.generateNewsItem(
-            NewsCategory.ECONOMIC,
-            state.country.name
-        )
-        
-        val uiState = state.uiState.copy(
-            newsFeed = NewsFeed(
-                articles = (state.uiState.newsFeed.articles + newArticle).take(100),
-                unreadCount = state.uiState.newsFeed.unreadCount + 1
-            )
-        )
-        
-        return state.copy(uiState = uiState)
+        // Generate news placeholder
+        return state
     }
     
     private fun updateUIState(state: CompleteGameState): CompleteGameState {
