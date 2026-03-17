@@ -11,6 +11,7 @@ import com.countrysimulator.game.domain.CrisisType.GENERAL_STRIKE
 import com.countrysimulator.game.domain.CrisisType.CORRUPTION_SCANDAL
 import com.countrysimulator.game.domain.CrisisType.PANDEMIC
 import com.countrysimulator.game.domain.CrisisType.FAMINE
+import com.countrysimulator.game.domain.CrisisType.STATE_FAILURE
 
 /**
  * COUNTRY SIMULATOR v10.0 - GAME LOGIC
@@ -667,8 +668,8 @@ object GameLogicV10 {
             ),
             microActions = newGame.microActions.copy(
                 actionPoints = newGame.microActions.actionPoints - action.cost.actionPoints,
-                stress = (newGame.microActions.stress + action.cost.stress).coerceIn(0, 100),
-                energy = (newGame.microActions.energy - action.cost.energy).coerceIn(0, 100)
+                stressLevel = (newGame.microActions.stressLevel + action.cost.stress).coerceIn(0, 100),
+                energyLevel = (newGame.microActions.energyLevel - action.cost.energy).coerceIn(0, 100)
             )
         )
 
@@ -955,7 +956,7 @@ object GameLogicV10 {
         } ?: generateRandomEvent(context)
     }
 
-    private fun generateCrisisEvent(context: EventContext, game: GameV10): GameEvent {
+    private fun generateCrisisEvent(context: EventContext, game: GameV10): GameEvent? {
         val crisis = game.crisisManager.activeCrises.firstOrNull() ?: return null
 
         return GameEvent(
@@ -1142,7 +1143,7 @@ object GameLogicV10 {
         newGame = newGame.copy(
             microActions = newGame.microActions.copy(
                 actionPoints = newGame.microActions.maxActionPoints,
-                energy = (newGame.microActions.energy + 20).coerceAtMost(100)
+                energyLevel = (newGame.microActions.energyLevel + 20).coerceAtMost(100)
             )
         )
 

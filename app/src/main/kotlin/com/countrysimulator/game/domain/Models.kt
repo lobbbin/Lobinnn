@@ -646,7 +646,7 @@ data class NaturalDisaster(
 
 // 15. ECONOMIC CRISIS
 @Serializable
-enum class CrisisType {
+enum class EconomicCrisisType {
     RECESSION,
     DEPRESSION,
     STOCK_CRASH,
@@ -658,7 +658,7 @@ enum class CrisisType {
 @Serializable
 data class EconomicCrisis(
     val id: String,
-    val type: CrisisType,
+    val type: EconomicCrisisType,
     val severity: Int,
     val duration: Int,
     val active: Boolean = true

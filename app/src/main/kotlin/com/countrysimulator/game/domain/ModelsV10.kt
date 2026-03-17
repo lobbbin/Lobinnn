@@ -422,7 +422,6 @@ data class PastEvent(
     val consequences: List<String>
 )
 
-@Serializable
 data class EventChain(
     val id: String,
     val name: String,
@@ -431,7 +430,6 @@ data class EventChain(
     val active: Boolean = false
 )
 
-@Serializable
 data class EventChainStage(
     val stage: Int,
     val trigger: EventTrigger,
@@ -547,6 +545,7 @@ data class GameV10(
     val globalMarket: GlobalMarket = GlobalMarket(),
     val isGameOver: Boolean = false,
     val gameOverReason: GameOverReason? = null,
+    @kotlinx.serialization.Transient
     val lastEvent: GameEvent? = null,
     val eventHistory: List<String> = emptyList(),
     val newsHeadline: String? = null,
