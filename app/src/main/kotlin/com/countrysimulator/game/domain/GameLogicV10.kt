@@ -99,15 +99,21 @@ object GameLogicV10 {
 
         // GDP Growth from sector performance
         val avgGrowth = sectors.map { it.growth }.average()
-        val gdpGrowth = (avgGrowth / 10 + indicators.gdpGrowth * 0.8).coerceIn(-10.0, 10.0)
+        val gdpGrowth = (avgGrowth / 10 + indicators.gdpGrowth * 0.8).let { 
+            it.coerceAtLeast(-10.0).coerceAtMost(10.0) 
+        }
 
         // Inflation from growth and money printing
         val inflationPressure = if (gdpGrowth > 3) 0.5 else 0
-        val inflation = (indicators.inflation + inflationPressure).coerceIn(0.0, 50.0)
+        val inflation = (indicators.inflation + inflationPressure).let {
+            it.coerceAtLeast(0.0).coerceAtMost(50.0)
+        }
 
         // Unemployment from sector employment
         val avgEmployment = sectors.map { it.employment }.average()
-        val unemployment = (100 - avgEmployment) / 10 + if (gdpGrowth < 0) 2 else 0
+        val unemployment = ((100 - avgEmployment) / 10 + if (gdpGrowth < 0) 2 else 0).let {
+            it.coerceAtLeast(0.0).coerceAtMost(50.0)
+        }
 
         // Credit rating from debt and growth
         val creditRating = when {
@@ -544,11 +550,11 @@ object GameLogicV10 {
             if (crisis.severity > 60) {
                 // High severity crises increase other risks
                 val cascadeBonus = 10
-                risks.transformValues { it + cascadeBonus }
+                risks = risks.mapValues { (_, v) -> (v + cascadeBonus).coerceIn(0, 100) }
             }
         }
 
-        return risks.mapValues { it.value.coerceIn(0, 100) }
+        return risks
     }
 
     fun respondToCrisis(game: GameV10, crisisId: String, response: CrisisResponse): GameV10 {
