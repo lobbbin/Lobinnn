@@ -106,7 +106,7 @@ data class QuestObjective(
 data class QuestReward(
     val type: RewardType,
     val stat: String,
-    val value: Int
+    val value: Any
 )
 
 @Serializable

@@ -114,7 +114,7 @@ object GameLogicV10 {
         val gdpGrowth = gdpGrowthRaw.coerceAtLeast(-10.0).coerceAtMost(10.0)
 
         // Inflation from growth and money printing
-        val inflationPressure = if (gdpGrowth > 3) 0.5 else 0
+        val inflationPressure = if (gdpGrowth > 3) 0.5 else 0.0
         val inflationRaw = indicators.inflation + inflationPressure
         val inflation = inflationRaw.coerceAtLeast(0.0).coerceAtMost(50.0)
 
@@ -468,7 +468,7 @@ object GameLogicV10 {
         val updatedRisks = updateCrisisRisks(game, crisisManager.crisisRisk)
 
         return crisisManager.copy(
-            activeCrises = activeCrises + newCrisis.filterNotNull(),
+            activeCrises = activeCrises + listOfNotNull(newCrisis),
             crisisRisk = updatedRisks
         )
     }
@@ -558,7 +558,7 @@ object GameLogicV10 {
             if (crisis.severity > 60) {
                 // High severity crises increase other risks
                 val cascadeBonus = 10
-                risks = risks.mapValues { (_, v) -> (v + cascadeBonus).coerceIn(0, 100) }
+                risks.putAll(risks.mapValues { (_, v) -> (v + cascadeBonus).coerceIn(0, 100) })
             }
         }
 
