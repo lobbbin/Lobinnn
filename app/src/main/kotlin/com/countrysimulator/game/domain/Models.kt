@@ -266,7 +266,11 @@ data class Election(
     val year: Int,
     val isActive: Boolean = false,
     val turnsRemaining: Int = 0,
-    val results: Map<String, Int> = emptyMap()
+    val results: Map<String, Int> = emptyMap(),
+    val type: ElectionType = ElectionType.GENERAL,
+    val campaignCost: Int = 5000,
+    val incumbentParty: String = "",
+    val challengerParties: List<String> = emptyList()
 )
 
 @Serializable
@@ -386,17 +390,6 @@ enum class ElectionType(val years: Int) {
     PARLIAMENTARY(5),
     LOCAL(2)
 }
-
-data class Election(
-    val year: Int,
-    val isActive: Boolean = false,
-    val turnsRemaining: Int = 0,
-    val results: Map<String, Int> = emptyMap(),
-    val type: ElectionType = ElectionType.GENERAL,
-    val campaignCost: Int = 5000,
-    val incumbentParty: String = "",
-    val challengerParties: List<String> = emptyList()
-)
 
 // 2. POLITICAL SCANDALS
 enum class ScandalType(val damage: Int, val cost: Int) {
@@ -613,7 +606,7 @@ enum class DisasterType(val damageMultiplier: Double) {
     FLOOD(1.0),
     DROUGHT(0.8),
     WILDFIRE(1.1),
-    volcano(2.0)
+    VOLCANO(2.0)
 }
 
 data class NaturalDisaster(
@@ -633,7 +626,7 @@ enum class CrisisType {
     STOCK_CRASH,
     INFLATION,
     DEFLATION,
-    BANKING CRISIS
+    BANKING_CRISIS
 }
 
 data class EconomicCrisis(
