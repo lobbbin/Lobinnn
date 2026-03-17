@@ -253,7 +253,7 @@ enum class SupernaturalType {
     CURSED_LAND,         // Haunted territory
     PROPHET_REVIVAL,     // Religious figure returns
     MYTHICAL_BEAST,      // Legendary creatures appear
-    occult_ACTIVITIES,   // Dark rituals performed
+    OCCULT_ACTIVITIES,   // Dark rituals performed
     DIVINE_INTERVENTION, // Gods take notice
     PSYCHIC_WAVE,        // Mass psychic event
     REALITY_FRACTURE     // Reality weakens
@@ -630,7 +630,7 @@ enum class AlienDisposition {
 }
 
 enum class ContactReaction {
-    UNKNOWN, PANIC, EXCITEMENT, MILITARY_ALERT, SCIENTIFIC Interest, RELIGIOUS
+    UNKNOWN, PANIC, EXCITEMENT, MILITARY_ALERT, SCIENTIFIC_INTEREST, RELIGIOUS
 }
 
 // ==================== FEATURE 290: TERRAFORMING ====================
